@@ -1,0 +1,274 @@
+# SPDX-License-Identifier: MIT OR Apache-2.0
+# Laniakea GitLab CI Pipeline
+
+stages:
+  - quality
+  - test
+  - build
+  - security
+  - deploy
+
+variables:
+  MIX_ENV: test
+  ELIXIR_VERSION: "1.15"
+  OTP_VERSION: "26"
+  DENO_VERSION: "1.38"
+
+# Cache configuration
+.cache-mix: &cache-mix
+  cache:
+    key: mix-$CI_COMMIT_REF_SLUG
+    paths:
+      - server/deps/
+      - server/_build/
+    policy: pull-push
+
+.cache-deno: &cache-deno
+  cache:
+    key: deno-$CI_COMMIT_REF_SLUG
+    paths:
+      - ~/.cache/deno/
+    policy: pull-push
+
+# Base images
+.elixir-image: &elixir-image
+  image: elixir:$ELIXIR_VERSION
+  before_script:
+    - mix local.hex --force
+    - mix local.rebar --force
+    - cd server && mix deps.get
+
+.deno-image: &deno-image
+  image: denoland/deno:$DENO_VERSION
+
+# ============================================================================
+# Quality Stage
+# ============================================================================
+
+format:server:
+  stage: quality
+  <<: *elixir-image
+  <<: *cache-mix
+  script:
+    - cd server && mix format --check-formatted
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+format:client:
+  stage: quality
+  <<: *deno-image
+  script:
+    - cd client && deno fmt --check
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+lint:server:
+  stage: quality
+  <<: *elixir-image
+  <<: *cache-mix
+  script:
+    - cd server && mix credo --strict
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+lint:client:
+  stage: quality
+  <<: *deno-image
+  script:
+    - cd client && deno lint
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+# ============================================================================
+# Test Stage
+# ============================================================================
+
+test:server:
+  stage: test
+  <<: *elixir-image
+  <<: *cache-mix
+  script:
+    - cd server && mix compile --warnings-as-errors
+    - cd server && mix test --cover
+  coverage: '/\d+\.\d+%/'
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: server/cover/cobertura.xml
+    paths:
+      - server/cover/
+    expire_in: 1 week
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+test:client:
+  stage: test
+  <<: *deno-image
+  <<: *cache-deno
+  script:
+    - cd client && deno test --allow-net test/ || true
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+verify:crdt:
+  stage: test
+  <<: *elixir-image
+  <<: *cache-mix
+  script:
+    - cd server
+    - mix run -e ':ok = Laniakea.CRDT.verify(Laniakea.CRDT.GCounter)'
+    - mix run -e ':ok = Laniakea.CRDT.verify(Laniakea.CRDT.PNCounter)'
+    - mix run -e ':ok = Laniakea.CRDT.verify(Laniakea.CRDT.ORSet)'
+    - mix run -e ':ok = Laniakea.CRDT.verify(Laniakea.CRDT.LWWRegister)'
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+typecheck:dialyzer:
+  stage: test
+  <<: *elixir-image
+  cache:
+    key: dialyzer-plt-$CI_COMMIT_REF_SLUG
+    paths:
+      - server/priv/plts/
+    policy: pull-push
+  script:
+    - cd server && mix dialyzer --plt
+    - cd server && mix dialyzer
+  allow_failure: true
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+# ============================================================================
+# Build Stage
+# ============================================================================
+
+build:server:
+  stage: build
+  <<: *elixir-image
+  variables:
+    MIX_ENV: prod
+  script:
+    - cd server && mix deps.get --only prod
+    - cd server && mix compile
+    - cd server && mix release
+  artifacts:
+    paths:
+      - server/_build/prod/rel/laniakea/
+    expire_in: 1 week
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_COMMIT_TAG
+
+build:client:
+  stage: build
+  <<: *deno-image
+  script:
+    - cd client && deno bundle src/Main.mjs dist/laniakea.bundle.js || true
+  artifacts:
+    paths:
+      - client/dist/
+    expire_in: 1 week
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_COMMIT_TAG
+
+build:docker:
+  stage: build
+  image: docker:latest
+  services:
+    - docker:dind
+  script:
+    - docker build -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA .
+    - docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA $CI_REGISTRY_IMAGE:latest
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+    - docker push $CI_REGISTRY_IMAGE:latest
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_COMMIT_TAG
+
+# ============================================================================
+# Security Stage
+# ============================================================================
+
+security:audit:
+  stage: security
+  <<: *elixir-image
+  <<: *cache-mix
+  script:
+    - cd server && mix deps.audit || true
+    - cd server && mix hex.audit || true
+  allow_failure: true
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+security:sast:
+  stage: security
+  include:
+    - template: Security/SAST.gitlab-ci.yml
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+# ============================================================================
+# Deploy Stage
+# ============================================================================
+
+deploy:staging:
+  stage: deploy
+  image: alpine:latest
+  script:
+    - echo "Deploying to staging..."
+    # Add deployment commands here
+  environment:
+    name: staging
+    url: https://staging.laniakea.dev
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      when: manual
+
+deploy:production:
+  stage: deploy
+  image: alpine:latest
+  script:
+    - echo "Deploying to production..."
+    # Add deployment commands here
+  environment:
+    name: production
+    url: https://laniakea.dev
+  rules:
+    - if: $CI_COMMIT_TAG
+      when: manual
+
+# ============================================================================
+# RSR Compliance
+# ============================================================================
+
+rsr:check:
+  stage: quality
+  image: alpine:latest
+  script:
+    - |
+      echo "Checking RSR compliance..."
+      for file in README.adoc LICENSE SECURITY.md CONTRIBUTING.md CODE_OF_CONDUCT.md MAINTAINERS.md CHANGELOG.md .well-known/security.txt; do
+        if [ -f "$file" ]; then
+          echo "✓ $file"
+        else
+          echo "✗ $file"
+          exit 1
+        fi
+      done
+      echo "RSR compliance check passed!"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH

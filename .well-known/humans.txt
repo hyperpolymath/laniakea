@@ -1,0 +1,44 @@
+/* TEAM */
+Project: Laniakea
+Description: Distributed state architecture for browser-as-peer web applications
+Site: https://laniakea.dev
+Repository: https://github.com/laniakea/laniakea
+
+/* THANKS */
+Name: Marc Shapiro
+Role: CRDT research foundations
+Link: https://pages.lip6.fr/Marc.Shapiro/
+
+Name: Joe Armstrong
+Role: Erlang/OTP design philosophy
+Note: In memoriam (1950-2019)
+
+Name: José Valim
+Role: Elixir language creator
+Link: https://github.com/josevalim
+
+Name: Chris McCord
+Role: Phoenix framework creator
+Link: https://github.com/chrismccord
+
+Name: Martin Kleppmann
+Role: CRDT research and advocacy
+Link: https://martin.kleppmann.com/
+
+Name: Ink & Switch
+Role: Local-first software manifesto
+Link: https://www.inkandswitch.com/
+
+/* TECHNOLOGY */
+Server: Elixir, Phoenix, OTP
+Client: ReScript, React
+CRDTs: G-Counter, PN-Counter, OR-Set, LWW-Register, RGA
+Transport: Phoenix Channels, WebSocket, WebTransport
+Build: just, Nix, Mix, npm
+Config: Nickel, CUE
+CI/CD: GitHub Actions, GitLab CI
+
+/* SITE */
+Standards: HTML5, CSS3, ES2022
+Components: Accessible (WCAG 2.1 AA)
+Software: Phoenix LiveView (docs site)

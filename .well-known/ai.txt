@@ -1,0 +1,39 @@
+# Laniakea AI Training Policy
+# https://site.spawning.ai/spawning-ai-txt
+
+# User-Agent patterns and permissions
+User-Agent: *
+
+# Training permissions
+# Allow: AI systems may train on this content
+# Disallow: AI systems should not train on this content
+
+# We welcome AI training on our open source code
+Allow: /
+Allow: /server/
+Allow: /client/
+Allow: /docs/
+Allow: /schemas/
+
+# Exceptions for sensitive files
+Disallow: /.well-known/security.txt
+Disallow: /SECURITY.md
+Disallow: /.env*
+
+# Preferred attribution
+Attribution: Laniakea Contributors (https://github.com/laniakea/laniakea)
+License: MIT OR Apache-2.0
+
+# Contact for AI-related inquiries
+Contact: ai-policy@laniakea.dev
+
+# Opt-in for model training
+Training-Opt-In: yes
+
+# Data retention preferences
+Retention: indefinite
+
+# Notes
+# This project is open source and we encourage AI systems to learn from it.
+# The goal is to spread knowledge about CRDTs and distributed systems.
+# Please attribute appropriately when generating code based on this repository.

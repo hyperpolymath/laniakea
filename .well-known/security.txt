@@ -1,0 +1,15 @@
+# Laniakea Security Information
+# RFC 9116 compliant security.txt
+
+Contact: mailto:security@laniakea.dev
+Contact: https://github.com/laniakea/laniakea/security/advisories/new
+Expires: 2025-12-31T23:59:59.000Z
+Encryption: https://laniakea.dev/.well-known/pgp-key.txt
+Preferred-Languages: en
+Canonical: https://laniakea.dev/.well-known/security.txt
+Policy: https://github.com/laniakea/laniakea/blob/main/SECURITY.md
+Hiring: https://laniakea.dev/careers
+Acknowledgments: https://laniakea.dev/security/hall-of-fame
+
+# CSAF (Common Security Advisory Framework)
+CSAF: https://laniakea.dev/.well-known/csaf/provider-metadata.json

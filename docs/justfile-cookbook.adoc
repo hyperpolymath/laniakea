@@ -1,0 +1,800 @@
+= Laniakea Justfile Cookbook
+:toc: macro
+:toc-title: Contents
+:toclevels: 3
+:icons: font
+:source-highlighter: rouge
+
+[.lead]
+Comprehensive guide to the Laniakea build system recipes.
+
+toc::[]
+
+== Overview
+
+Laniakea uses https://github.com/casey/just[just] as its command runner. The justfile provides 80+ recipes for development, testing, building, and deployment.
+
+=== Quick Reference
+
+[cols="2,3,2"]
+|===
+|Command |Description |Category
+
+|`just` |Show help |Help
+|`just --list` |List all recipes |Help
+|`just doctor` |Check dependencies |Setup
+|`just setup` |Install dependencies |Setup
+|`just dev` |Start development |Development
+|`just test` |Run all tests |Testing
+|`just quality` |Run quality checks |Quality
+|`just build` |Build everything |Build
+|`just ci` |Run CI pipeline |CI/CD
+|===
+
+== Getting Started
+
+=== Installation
+
+[source,bash]
+----
+# macOS
+brew install just
+
+# Linux (various)
+cargo install just
+# or
+curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash
+
+# Nix
+nix-env -iA nixpkgs.just
+----
+
+=== First Run
+
+[source,bash]
+----
+# Check your environment
+just doctor
+
+# Install all dependencies
+just setup
+
+# Start development
+just dev
+----
+
+== Recipe Categories
+
+=== Setup & Initialization
+
+==== `just setup`
+
+Full project setup. Runs `setup-server` and `setup-client`.
+
+[source,bash]
+----
+just setup
+# Equivalent to:
+# just setup-server
+# just setup-client
+----
+
+==== `just setup-nix`
+
+Setup using Nix for reproducible builds.
+
+[source,bash]
+----
+just setup-nix
+# Enters Nix shell then runs setup
+----
+
+==== `just doctor`
+
+Verify all dependencies are installed.
+
+[source,bash]
+----
+just doctor
+
+# Output:
+# === System Check ===
+# Elixir: Elixir 1.15.0
+# Erlang/OTP: 26
+# Deno: deno 1.38.0
+# ReScript: 11.0.0
+# ...
+----
+
+=== Development
+
+==== `just dev`
+
+Start both server and client in development mode.
+
+[source,bash]
+----
+just dev
+# Server: http://localhost:4000
+# Client: watching for changes
+----
+
+==== `just dev-server`
+
+Start only the Phoenix server.
+
+[source,bash]
+----
+just dev-server
+# Opens http://localhost:4000
+----
+
+==== `just dev-server-iex`
+
+Start server with interactive Elixir shell.
+
+[source,bash]
+----
+just dev-server-iex
+# IEx shell with server running
+# Try: Laniakea.CRDT.GCounter.new() |> Laniakea.CRDT.GCounter.increment("test")
+----
+
+==== `just dev-client`
+
+Watch client files and rebuild on changes.
+
+[source,bash]
+----
+just dev-client
+# ReScript watcher
+----
+
+==== `just console`
+
+Open IEx console with project loaded.
+
+[source,bash]
+----
+just console
+# iex(1)> Laniakea.CRDT.Registry.keys()
+----
+
+=== Building
+
+==== `just build`
+
+Build everything (server + client).
+
+[source,bash]
+----
+just build
+----
+
+==== `just build-release`
+
+Build production releases.
+
+[source,bash]
+----
+just build-release
+# Creates:
+# - server/_build/prod/rel/laniakea
+# - client/dist/laniakea.bundle.js
+----
+
+==== `just clean`
+
+Remove all build artifacts.
+
+[source,bash]
+----
+just clean
+----
+
+=== Testing
+
+==== `just test`
+
+Run all tests (server + client).
+
+[source,bash]
+----
+just test
+----
+
+==== `just test-server`
+
+Run server tests only.
+
+[source,bash]
+----
+just test-server
+# Mix test output
+----
+
+==== `just test-server-coverage`
+
+Run with code coverage.
+
+[source,bash]
+----
+just test-server-coverage
+# Generates coverage report
+----
+
+==== `just test-server-file <file>`
+
+Run a specific test file.
+
+[source,bash]
+----
+just test-server-file test/crdt/g_counter_test.exs
+----
+
+==== `just test-property`
+
+Run property-based tests for CRDT laws.
+
+[source,bash]
+----
+just test-property
+# Tests:
+# - Commutativity: merge(a, b) == merge(b, a)
+# - Associativity: merge(merge(a, b), c) == merge(a, merge(b, c))
+# - Idempotence: merge(a, a) == a
+----
+
+==== `just test-crdt-verify`
+
+Verify all CRDT implementations.
+
+[source,bash]
+----
+just test-crdt-verify
+# Verifies: GCounter, PNCounter, ORSet, LWWRegister
+----
+
+==== `just test-integration`
+
+Run integration tests.
+
+[source,bash]
+----
+just test-integration
+----
+
+=== Code Quality
+
+==== `just quality`
+
+Run all quality checks.
+
+[source,bash]
+----
+just quality
+# Runs: format-check, lint, typecheck
+----
+
+==== `just format`
+
+Format all code.
+
+[source,bash]
+----
+just format
+# Formats Elixir (mix format) and client (deno fmt)
+----
+
+==== `just lint`
+
+Run linters.
+
+[source,bash]
+----
+just lint
+# Server: Credo (strict mode)
+# Client: Deno lint
+----
+
+==== `just typecheck`
+
+Run type checkers.
+
+[source,bash]
+----
+just typecheck
+# Server: Dialyzer
+# Client: ReScript + Deno check
+----
+
+==== `just dialyzer-plt`
+
+Build Dialyzer PLT (first run).
+
+[source,bash]
+----
+just dialyzer-plt
+# Takes several minutes on first run
+# Subsequent runs use cached PLT
+----
+
+=== Documentation
+
+==== `just docs`
+
+Generate all documentation.
+
+[source,bash]
+----
+just docs
+----
+
+==== `just docs-server-open`
+
+Generate and open server docs in browser.
+
+[source,bash]
+----
+just docs-server-open
+# Opens server/doc/index.html
+----
+
+==== `just docs-serve <port>`
+
+Serve docs locally.
+
+[source,bash]
+----
+just docs-serve 8080
+# http://localhost:8080
+----
+
+=== Database (ArangoDB)
+
+==== `just db-start`
+
+Start ArangoDB in Docker.
+
+[source,bash]
+----
+just db-start
+# ArangoDB available at http://localhost:8529
+# Username: root
+# Password: laniakea
+----
+
+==== `just db-stop`
+
+Stop ArangoDB.
+
+[source,bash]
+----
+just db-stop
+----
+
+==== `just db-setup`
+
+Create database and collections.
+
+[source,bash]
+----
+just db-setup
+# Creates: laniakea database
+# Collections: crdts, events, clients
+----
+
+==== `just db-shell`
+
+Open ArangoDB shell.
+
+[source,bash]
+----
+just db-shell
+# arangosh> db._collections()
+----
+
+=== Docker
+
+==== `just docker-build`
+
+Build Docker image.
+
+[source,bash]
+----
+just docker-build
+# Creates: laniakea:0.1.0
+----
+
+==== `just docker-run`
+
+Run in Docker.
+
+[source,bash]
+----
+just docker-run
+# http://localhost:4000
+----
+
+==== `just docker-up`
+
+Start with Docker Compose.
+
+[source,bash]
+----
+just docker-up
+# Starts: laniakea, arangodb
+----
+
+==== `just docker-push <registry>`
+
+Push to container registry.
+
+[source,bash]
+----
+just docker-push ghcr.io/myorg
+# Pushes: ghcr.io/myorg/laniakea:0.1.0
+----
+
+=== CI/CD
+
+==== `just ci`
+
+Run CI checks (same as pipeline).
+
+[source,bash]
+----
+just ci
+# Runs: quality, test, build
+----
+
+==== `just ci-full`
+
+Run full CI with coverage.
+
+[source,bash]
+----
+just ci-full
+# Runs: quality, test-coverage, build
+----
+
+=== Security
+
+==== `just security-audit`
+
+Run security audit.
+
+[source,bash]
+----
+just security-audit
+# Checks: deps.audit, hex.audit
+----
+
+==== `just sbom`
+
+Generate Software Bill of Materials.
+
+[source,bash]
+----
+just sbom
+# Creates: sbom.json (CycloneDX format)
+----
+
+=== RSR Compliance
+
+==== `just rsr-check`
+
+Check RSR compliance.
+
+[source,bash]
+----
+just rsr-check
+# Checks:
+# - Type safety (Dialyzer, ReScript)
+# - Tests pass
+# - Required files (README, LICENSE, SECURITY.md, etc.)
+----
+
+==== `just rsr-verify-bronze`
+
+Full Bronze level verification.
+
+[source,bash]
+----
+just rsr-verify-bronze
+# Includes: rsr-check + CRDT verification
+----
+
+=== Benchmarking
+
+==== `just bench`
+
+Run all benchmarks.
+
+[source,bash]
+----
+just bench
+----
+
+==== `just bench-crdt`
+
+Benchmark CRDT operations.
+
+[source,bash]
+----
+just bench-crdt
+# Output:
+# GCounter.increment: 1.2μs ± 0.1μs
+# GCounter.merge: 2.5μs ± 0.3μs
+----
+
+=== Configuration
+
+==== `just config-validate`
+
+Validate Nickel configuration.
+
+[source,bash]
+----
+just config-validate
+----
+
+==== `just config-export <output>`
+
+Export configuration to JSON.
+
+[source,bash]
+----
+just config-export config.json
+----
+
+==== `just config-generate <env>`
+
+Generate config for environment.
+
+[source,bash]
+----
+just config-generate prod
+# Creates: server/config/generated.json
+----
+
+=== Utilities
+
+==== `just gen-secret`
+
+Generate a Phoenix secret key.
+
+[source,bash]
+----
+just gen-secret
+# Output: xvz3K8m9...
+----
+
+==== `just gen-uuid`
+
+Generate a UUID.
+
+[source,bash]
+----
+just gen-uuid
+# Output: 550e8400-e29b-41d4-a716-446655440000
+----
+
+==== `just loc`
+
+Count lines of code.
+
+[source,bash]
+----
+just loc
+# Elixir: 2345
+# ReScript: 1234
+----
+
+==== `just stats`
+
+Show project statistics.
+
+[source,bash]
+----
+just stats
+# Lines of code, deps count, CRDT count, test count
+----
+
+=== Nix
+
+==== `just nix-shell`
+
+Enter Nix development shell.
+
+[source,bash]
+----
+just nix-shell
+# All dependencies available
+----
+
+==== `just nix-build`
+
+Build with Nix.
+
+[source,bash]
+----
+just nix-build
+# Reproducible build
+----
+
+==== `just nix-check`
+
+Run Nix flake checks.
+
+[source,bash]
+----
+just nix-check
+----
+
+=== Aliases
+
+Quick shortcuts for common commands:
+
+[cols="1,2"]
+|===
+|Alias |Full Command
+
+|`just b` |`just build`
+|`just t` |`just test`
+|`just d` |`just dev`
+|`just f` |`just format`
+|`just l` |`just lint`
+|`just q` |`just quality`
+|`just c` |`just console`
+|===
+
+== Workflow Examples
+
+=== Daily Development
+
+[source,bash]
+----
+# Morning: start fresh
+just setup
+just dev
+
+# During development
+just t              # Run tests
+just f              # Format code
+just test-server-file test/crdt/g_counter_test.exs  # Test specific file
+
+# Before commit
+just q              # Quality checks
+just ci             # Full CI simulation
+----
+
+=== Adding a New CRDT
+
+[source,bash]
+----
+# 1. Create files
+# server/lib/laniakea/crdt/my_crdt.ex
+# client/src/crdt/MyCrdt.res
+
+# 2. Test implementation
+just test-property
+
+# 3. Verify CRDT laws
+just test-crdt-verify
+
+# 4. Run full quality
+just quality
+
+# 5. Build
+just build
+----
+
+=== Preparing a Release
+
+[source,bash]
+----
+# 1. Run full CI
+just ci-full
+
+# 2. Update version in mix.exs and rescript.json
+
+# 3. Update CHANGELOG.md
+
+# 4. Build release
+just build-release
+
+# 5. Create release
+just release 0.2.0
+
+# 6. Publish
+git push origin v0.2.0
+just publish-hex
+----
+
+=== Debugging
+
+[source,bash]
+----
+# Start with IEx
+just dev-server-iex
+
+# In IEx:
+iex> Laniakea.CRDT.Registry.keys()
+iex> Laniakea.CRDT.Registry.get("counter:test")
+iex> :observer.start()  # GUI observer
+----
+
+== Customization
+
+=== Overriding Variables
+
+[source,bash]
+----
+# Use different tools
+just elixir=/custom/elixir build
+just deno=/custom/deno test-client
+
+# Override version
+just version=0.2.0-beta docker-build
+----
+
+=== Adding Custom Recipes
+
+Create a `justfile.local` for project-specific recipes:
+
+[source,just]
+----
+# justfile.local
+import "justfile"
+
+# My custom recipe
+deploy-staging:
+    @echo "Deploying to staging..."
+    ssh staging "cd /app && git pull && just build-release"
+----
+
+Then run:
+
+[source,bash]
+----
+just -f justfile.local deploy-staging
+----
+
+== Troubleshooting
+
+=== Dialyzer Takes Forever
+
+First run builds the PLT. Run separately:
+
+[source,bash]
+----
+just dialyzer-plt
+# Go get coffee...
+# Subsequent runs will be fast
+----
+
+=== Tests Fail in CI but Pass Locally
+
+Ensure you're running the same checks:
+
+[source,bash]
+----
+just ci  # Run exact CI pipeline locally
+----
+
+=== ReScript Build Errors
+
+Clean and rebuild:
+
+[source,bash]
+----
+just clean-client
+just build-client
+----
+
+== See Also
+
+* https://github.com/casey/just[just documentation]
+* link:../README.adoc[Laniakea README]
+* link:wiki/Architecture.md[Architecture Guide]

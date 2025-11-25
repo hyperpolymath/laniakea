@@ -1,0 +1,154 @@
+#!/bin/sh
+# SPDX-License-Identifier: MIT OR Apache-2.0
+# Laniakea CLI wrapper
+#
+# This script provides a POSIX-compatible wrapper for the Laniakea CLI.
+# It automatically selects the appropriate runtime (Deno or fallback).
+
+set -e
+
+# Find the project root
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+CLI_PATH="$PROJECT_ROOT/cli/laniakea.ts"
+
+# Color support detection
+if [ -t 1 ] && command -v tput >/dev/null 2>&1; then
+    RED=$(tput setaf 1)
+    GREEN=$(tput setaf 2)
+    YELLOW=$(tput setaf 3)
+    BLUE=$(tput setaf 4)
+    RESET=$(tput sgr0)
+else
+    RED=""
+    GREEN=""
+    YELLOW=""
+    BLUE=""
+    RESET=""
+fi
+
+# Helper functions
+info() {
+    printf '%s%s%s\n' "$BLUE" "$1" "$RESET"
+}
+
+warn() {
+    printf '%s%s%s\n' "$YELLOW" "$1" "$RESET" >&2
+}
+
+error() {
+    printf '%s%s%s\n' "$RED" "$1" "$RESET" >&2
+    exit 1
+}
+
+# Check for Deno
+if command -v deno >/dev/null 2>&1; then
+    exec deno run \
+        --allow-read \
+        --allow-write \
+        --allow-env \
+        --allow-net \
+        --allow-run \
+        "$CLI_PATH" "$@"
+fi
+
+# Deno not found - check for alternative runtimes or provide help
+warn "Deno not found. Attempting fallback..."
+
+# Try to use just if available for common commands
+if command -v just >/dev/null 2>&1; then
+    case "$1" in
+        server)
+            case "$2" in
+                start) exec just dev-server ;;
+                iex) exec just dev-server-iex ;;
+                release) exec just build-release ;;
+            esac
+            ;;
+        client)
+            case "$2" in
+                build) exec just build-client ;;
+                watch) exec just dev-client ;;
+                clean) exec just clean-client ;;
+            esac
+            ;;
+        test)
+            case "$2" in
+                all|"") exec just test ;;
+                server) exec just test-server ;;
+                client) exec just test-client ;;
+                crdt|verify) exec just test-crdt-verify ;;
+            esac
+            ;;
+        quality)
+            case "$2" in
+                all|"") exec just quality ;;
+                format) exec just format-check ;;
+                lint) exec just lint ;;
+                typecheck) exec just typecheck ;;
+            esac
+            ;;
+        doctor)
+            exec just doctor
+            ;;
+        db)
+            case "$2" in
+                start) exec just db-start ;;
+                stop) exec just db-stop ;;
+                setup) exec just db-setup ;;
+                status) exec just db-status ;;
+            esac
+            ;;
+        docker)
+            case "$2" in
+                build) exec just docker-build ;;
+                run) exec just docker-run ;;
+                push) exec just docker-push "$3" ;;
+            esac
+            ;;
+        rsr)
+            exec just rsr-check
+            ;;
+        version|-V|--version)
+            echo "laniakea 0.1.0 (via just fallback)"
+            exit 0
+            ;;
+        help|-h|--help)
+            echo "Laniakea CLI (just fallback mode)"
+            echo ""
+            echo "Deno is required for full CLI functionality."
+            echo "Install Deno: curl -fsSL https://deno.land/install.sh | sh"
+            echo ""
+            echo "Available commands via just:"
+            echo "  server start|iex|release"
+            echo "  client build|watch|clean"
+            echo "  test [all|server|client|crdt]"
+            echo "  quality [all|format|lint|typecheck]"
+            echo "  doctor"
+            echo "  db start|stop|setup|status"
+            echo "  docker build|run|push"
+            echo "  rsr"
+            echo ""
+            echo "Run 'just --list' for all available recipes."
+            exit 0
+            ;;
+    esac
+
+    warn "Unknown command or subcommand. Trying just..."
+    exec just "$@"
+fi
+
+# No runtime available
+error "Error: Neither Deno nor just found.
+
+Install Deno:
+  curl -fsSL https://deno.land/install.sh | sh
+
+Install just:
+  # macOS
+  brew install just
+
+  # Linux
+  cargo install just
+
+  # Or download from https://github.com/casey/just/releases"

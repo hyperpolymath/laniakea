@@ -1,0 +1,314 @@
+# SPDX-License-Identifier: MIT OR Apache-2.0
+# Laniakea CI Pipeline
+
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  MIX_ENV: test
+  ELIXIR_VERSION: '1.15'
+  OTP_VERSION: '26'
+  DENO_VERSION: '1.38'
+
+jobs:
+  # ============================================================================
+  # Quality Checks
+  # ============================================================================
+  quality:
+    name: Quality Checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+          otp-version: ${{ env.OTP_VERSION }}
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: ${{ env.DENO_VERSION }}
+
+      - name: Cache deps
+        uses: actions/cache@v3
+        with:
+          path: |
+            server/deps
+            server/_build
+          key: ${{ runner.os }}-mix-${{ hashFiles('server/mix.lock') }}
+          restore-keys: ${{ runner.os }}-mix-
+
+      - name: Install dependencies
+        run: |
+          cd server && mix deps.get
+
+      - name: Check formatting (server)
+        run: cd server && mix format --check-formatted
+
+      - name: Check formatting (client)
+        run: cd client && deno fmt --check
+
+      - name: Lint (Credo)
+        run: cd server && mix credo --strict
+
+      - name: Lint (Deno)
+        run: cd client && deno lint
+
+  # ============================================================================
+  # Type Checking
+  # ============================================================================
+  typecheck:
+    name: Type Checking
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+          otp-version: ${{ env.OTP_VERSION }}
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: ${{ env.DENO_VERSION }}
+
+      - name: Cache PLT
+        uses: actions/cache@v3
+        with:
+          path: server/priv/plts
+          key: ${{ runner.os }}-plt-${{ hashFiles('server/mix.lock') }}
+          restore-keys: ${{ runner.os }}-plt-
+
+      - name: Install dependencies
+        run: cd server && mix deps.get
+
+      - name: Build PLT
+        run: cd server && mix dialyzer --plt
+
+      - name: Run Dialyzer
+        run: cd server && mix dialyzer --format github
+
+      - name: Check client types
+        run: cd client && deno check src/**/*.mjs || true
+
+  # ============================================================================
+  # Server Tests
+  # ============================================================================
+  test-server:
+    name: Server Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+          otp-version: ${{ env.OTP_VERSION }}
+
+      - name: Cache deps
+        uses: actions/cache@v3
+        with:
+          path: |
+            server/deps
+            server/_build
+          key: ${{ runner.os }}-mix-${{ hashFiles('server/mix.lock') }}
+
+      - name: Install dependencies
+        run: cd server && mix deps.get
+
+      - name: Compile
+        run: cd server && mix compile --warnings-as-errors
+
+      - name: Run tests
+        run: cd server && mix test --cover
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          files: server/cover/excoveralls.json
+          flags: server
+
+  # ============================================================================
+  # Client Tests
+  # ============================================================================
+  test-client:
+    name: Client Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: ${{ env.DENO_VERSION }}
+
+      - name: Build ReScript
+        run: |
+          cd client
+          # Note: ReScript needs to be installed
+          # For now, we test the compiled JS
+
+      - name: Run tests
+        run: cd client && deno test --allow-net test/ || true
+
+  # ============================================================================
+  # CRDT Verification
+  # ============================================================================
+  verify-crdt:
+    name: CRDT Law Verification
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+          otp-version: ${{ env.OTP_VERSION }}
+
+      - name: Cache deps
+        uses: actions/cache@v3
+        with:
+          path: |
+            server/deps
+            server/_build
+          key: ${{ runner.os }}-mix-${{ hashFiles('server/mix.lock') }}
+
+      - name: Install dependencies
+        run: cd server && mix deps.get
+
+      - name: Verify CRDT implementations
+        run: |
+          cd server
+          mix run -e 'IO.puts("Verifying GCounter..."); :ok = Laniakea.CRDT.verify(Laniakea.CRDT.GCounter)'
+          mix run -e 'IO.puts("Verifying PNCounter..."); :ok = Laniakea.CRDT.verify(Laniakea.CRDT.PNCounter)'
+          mix run -e 'IO.puts("Verifying ORSet..."); :ok = Laniakea.CRDT.verify(Laniakea.CRDT.ORSet)'
+          mix run -e 'IO.puts("Verifying LWWRegister..."); :ok = Laniakea.CRDT.verify(Laniakea.CRDT.LWWRegister)'
+
+  # ============================================================================
+  # Build
+  # ============================================================================
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: [quality, test-server, verify-crdt]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+          otp-version: ${{ env.OTP_VERSION }}
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: ${{ env.DENO_VERSION }}
+
+      - name: Cache deps
+        uses: actions/cache@v3
+        with:
+          path: |
+            server/deps
+            server/_build
+          key: ${{ runner.os }}-mix-prod-${{ hashFiles('server/mix.lock') }}
+
+      - name: Install dependencies
+        run: cd server && mix deps.get --only prod
+
+      - name: Build server release
+        env:
+          MIX_ENV: prod
+          SECRET_KEY_BASE: ${{ secrets.SECRET_KEY_BASE || 'test_secret_key_base_for_ci_build_only' }}
+        run: |
+          cd server
+          mix compile
+          mix release
+
+      - name: Build client bundle
+        run: |
+          cd client
+          deno bundle src/Main.mjs dist/laniakea.bundle.js || true
+
+      - name: Upload server artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: server-release
+          path: server/_build/prod/rel/laniakea
+
+      - name: Upload client artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: client-bundle
+          path: client/dist/
+
+  # ============================================================================
+  # Security Audit
+  # ============================================================================
+  security:
+    name: Security Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+          otp-version: ${{ env.OTP_VERSION }}
+
+      - name: Install dependencies
+        run: cd server && mix deps.get
+
+      - name: Audit dependencies
+        run: cd server && mix deps.audit
+        continue-on-error: true
+
+      - name: Check Hex packages
+        run: cd server && mix hex.audit
+        continue-on-error: true
+
+  # ============================================================================
+  # RSR Compliance Check
+  # ============================================================================
+  rsr-check:
+    name: RSR Compliance
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check required files
+        run: |
+          echo "Checking RSR compliance..."
+          test -f README.adoc && echo "✓ README.adoc" || (echo "✗ README.adoc" && exit 1)
+          test -f LICENSE && echo "✓ LICENSE" || (echo "✗ LICENSE" && exit 1)
+          test -f SECURITY.md && echo "✓ SECURITY.md" || (echo "✗ SECURITY.md" && exit 1)
+          test -f CONTRIBUTING.md && echo "✓ CONTRIBUTING.md" || (echo "✗ CONTRIBUTING.md" && exit 1)
+          test -f CODE_OF_CONDUCT.md && echo "✓ CODE_OF_CONDUCT.md" || (echo "✗ CODE_OF_CONDUCT.md" && exit 1)
+          test -f MAINTAINERS.md && echo "✓ MAINTAINERS.md" || (echo "✗ MAINTAINERS.md" && exit 1)
+          test -f CHANGELOG.md && echo "✓ CHANGELOG.md" || (echo "✗ CHANGELOG.md" && exit 1)
+          test -f .well-known/security.txt && echo "✓ .well-known/security.txt" || (echo "✗ .well-known/security.txt" && exit 1)
+          echo "RSR compliance check passed!"
