@@ -1,0 +1,36 @@
+= laniakea - Citation Guide
+:toc:
+
+== BibTeX
+
+[source,bibtex]
+----
+@software{laniakea_2025,
+  author = {Polymath, Hyper},
+  title = {laniakea},
+  year = {2025},
+  url = {https://github.com/hyperpolymath/laniakea},
+  license = {AGPL-3.0-or-later}
+}
+----
+
+== Harvard Style
+
+Polymath, H. (2025) _laniakea_ [Computer software]. Available at: https://github.com/hyperpolymath/laniakea
+
+== OSCOLA
+
+Hyper Polymath, 'laniakea' (2025) <https://github.com/hyperpolymath/laniakea>
+
+== MLA
+
+Polymath, Hyper. "laniakea." 2025, github.com/hyperpolymath/laniakea.
+
+== APA 7
+
+Polymath, H. (2025). _laniakea_ [Computer software]. GitHub. https://github.com/hyperpolymath/laniakea
+
+== See Also
+
+* link:../CITATION.cff[CITATION.cff]
+* link:../codemeta.json[codemeta.json]
