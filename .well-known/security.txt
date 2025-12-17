@@ -3,7 +3,7 @@
 
 Contact: mailto:security@laniakea.dev
 Contact: https://github.com/laniakea/laniakea/security/advisories/new
-Expires: 2025-12-31T23:59:59.000Z
+Expires: 2026-12-31T23:59:59.000Z
 Encryption: https://laniakea.dev/.well-known/pgp-key.txt
 Preferred-Languages: en
 Canonical: https://laniakea.dev/.well-known/security.txt

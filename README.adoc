@@ -488,30 +488,56 @@ cd client && npm run typecheck
 
 == Roadmap
 
-=== 2024 Q4 - Phase 0
+_Updated: December 2025_
+
+=== Phase 0 - Core Foundation (Completed)
 * [x] G-Counter CRDT implementation (server + client)
+* [x] PN-Counter CRDT implementation (server + client)
+* [x] OR-Set CRDT implementation (server + client)
+* [x] LWW-Register CRDT implementation (server + client)
 * [x] Phoenix Channel transport
-* [x] Capability negotiation
-* [ ] Basic demo application
-* [ ] Documentation
+* [x] Capability negotiation protocol
+* [x] ReScript client with isomorphic CRDTs
+* [x] RSR compliance infrastructure
+* [x] CI/CD with GitHub Actions + GitLab CI
+* [x] Security hardening (SHA-pinned actions, SPDX headers)
+* [x] Nix flake for reproducible builds
 
-=== 2025 Q1 - Phase 1
-* [ ] Delta-based CRDT sync
-* [ ] More CRDT types (PN-Counter, OR-Set)
-* [ ] Typed command/event envelopes
+=== Phase 1 - Production Readiness (In Progress)
+* [ ] Delta-based CRDT sync optimization
+* [ ] Typed command/event envelopes with schema validation
 * [ ] Schema generators (Protobuf/Cap'n Proto)
+* [ ] Complete TS → ReScript migration
+* [ ] Comprehensive test coverage (>80%)
+* [ ] Performance benchmarks
+* [ ] Basic demo application with offline support
 
-=== 2025 Q2 - Phase 2
+=== Phase 2 - Transport & Observability (Planned)
 * [ ] WebTransport support
 * [ ] Transport hedging (race WebSocket vs WebTransport)
 * [ ] OpenTelemetry integration
 * [ ] Backpressure monitoring
+* [ ] Connection quality metrics
+* [ ] QUIC experimentation
 
-=== 2025 Q3+ - Phase 3/4
+=== Phase 3 - Advanced CRDTs (Planned)
+* [ ] RGA (Replicated Growable Array) for collaborative text
+* [ ] CRDT garbage collection
+* [ ] Causal stability optimization
+* [ ] Large state sharding
+
+=== Phase 4 - BEAM in Browser (Research)
 * [ ] Evaluate Popcorn/AtomVM integration
-* [ ] Zig/Wasm runtime research
+* [ ] Zig/Wasm runtime bridge research
 * [ ] Browser supervision trees
 * [ ] Full distributed BEAM semantics
+* [ ] OTP process support in browser
+
+=== Continuous Improvements
+* [ ] Add Containerfile for container builds
+* [ ] Expand RSR compliance to Tier 1
+* [ ] Documentation site with GitHub Pages
+* [ ] Interactive playground/demo
 
 == Prior Art & Inspiration
 
