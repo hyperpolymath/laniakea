@@ -1,0 +1,14 @@
+{
+  "name": "laniakea-client",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "build": "rescript build",
+    "clean": "rescript clean",
+    "watch": "rescript build -w"
+  },
+  "dependencies": {
+    "@rescript/core": "^1.6.1",
+    "rescript": "^12.0.2"
+  }
+}
