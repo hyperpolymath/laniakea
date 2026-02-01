@@ -12,7 +12,7 @@
 *The browser isn't a client — it's a peer node in a distributed system where state flows and converges.*
 
 image::https://img.shields.io/badge/status-Phase%200-blue[Status]
-image::https://img.shields.io/badge/license-MIT%20%2F%20Apache--2.0-green[License]
+image:https://img.shields.io/badge/License-PMPL--1.0-blue.svg[License: PMPL-1.0,link="https://github.com/hyperpolymath/palimpsest-license"]
 image::https://img.shields.io/badge/elixir-%3E%3D%201.15-purple[Elixir]
 
 toc::[]
