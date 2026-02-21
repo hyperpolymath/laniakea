@@ -545,3 +545,8 @@ The universe is a pretty big place. If it's just us, seems like an awful waste o
 ____
 
 In the Laniakea architecture, your browser isn't alone — it's part of something bigger.
+
+
+== Architecture
+
+See link:TOPOLOGY.md[TOPOLOGY.md] for a visual architecture map and completion dashboard.
