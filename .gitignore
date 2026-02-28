@@ -73,6 +73,9 @@ htmlcov/
 *.log
 /logs/
 
+# Windows executables
+*.exe
+
 # Temp
 /tmp/
 *.tmp
