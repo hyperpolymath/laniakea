@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# Clade declaration — part of the gv-clade-index registry
+# See: https://github.com/hyperpolymath/gv-clade-index
+
+[identity]
+uuid = "3b7b0de8-efa6-5b4f-be3d-492a5d459b38"
+primary-forge = "github"
+primary-owner = "hyperpolymath"
+canonical-name = "laniakea"
+prefixed-name = "ix-laniakea"
+
+[clade]
+primary = "ix"
+secondary = []
+assigned = "2026-03-16"
+rationale = ""
+
+[forges]
+github = "hyperpolymath/laniakea"
+gitlab = "hyperpolymath/laniakea"
+bitbucket = "hyperpolymath/laniakea"
+
+[lineage]
+type = "standalone"
+parent = "Large-scale infrastructure"
+born = "2026-03-16"
