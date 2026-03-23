@@ -492,7 +492,8 @@ bench-client:
 
 # Benchmark CRDT operations
 bench-crdt:
-    @echo "{{blue}}=== CRDT Operation Benchmarks ==={{nc}}"
+    #!/usr/bin/env bash
+    echo "{{blue}}=== CRDT Operation Benchmarks ==={{nc}}"
     cd {{server_dir}} && {{mix}} run -e '
       Benchee.run(%{
         "GCounter.increment" => fn -> Laniakea.CRDT.GCounter.new() |> Laniakea.CRDT.GCounter.increment("node") end,
@@ -621,11 +622,6 @@ q: quality
 
 # Alias: console
 c: console
-
-# [AUTO-GENERATED] Multi-arch / RISC-V target
-build-riscv:
-	@echo "Building for RISC-V..."
-	cross build --target riscv64gc-unknown-linux-gnu
 
 # Run panic-attacker pre-commit scan
 assail:
