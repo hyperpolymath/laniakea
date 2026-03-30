@@ -376,7 +376,7 @@ defmodule Mix.Tasks.Laniakea do
     if length(data) > 0 and is_map(hd(data)) do
       headers = data |> hd() |> Map.keys() |> Enum.map(&to_string/1)
       rows = Enum.map(data, fn row ->
-        Enum.map(headers, fn h -> Map.get(row, String.to_atom(h), "") |> format_value() end)
+        Enum.map(headers, fn h -> Map.get(row, String.to_existing_atom(h), "") |> format_value() end)
       end)
 
       widths = Enum.map(0..(length(headers) - 1), fn i ->
