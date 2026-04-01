@@ -1,4 +1,4 @@
-#!/usr/bin/env -S deno run --allow-all
+#!/usr/bin/env -S deno run --allow-read --allow-write --allow-env --allow-net --allow-run
 // SPDX-License-Identifier: MIT OR Apache-2.0
 // Laniakea CLI - Comprehensive command-line interface for workflow integration
 

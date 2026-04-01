@@ -492,7 +492,8 @@ bench-client:
 
 # Benchmark CRDT operations
 bench-crdt:
-    @echo "{{blue}}=== CRDT Operation Benchmarks ==={{nc}}"
+    #!/usr/bin/env bash
+    echo "{{blue}}=== CRDT Operation Benchmarks ==={{nc}}"
     cd {{server_dir}} && {{mix}} run -e '
       Benchee.run(%{
         "GCounter.increment" => fn -> Laniakea.CRDT.GCounter.new() |> Laniakea.CRDT.GCounter.increment("node") end,

@@ -1,0 +1,15 @@
+-- SPDX-License-Identifier: PMPL-1.0-or-later
+-- Idris2 package for laniakea CRDT algebraic law proofs.
+
+package laniakea-crdt-proofs
+
+modules = SemilatticeLaws
+        , MaxNat
+        , GCounter
+        , PNCounter
+        , ORSet
+        , LWWRegister
+
+sourcedir = "."
+
+opts = "--total"
