@@ -1,24 +1,143 @@
 // SPDX-License-Identifier: PMPL-1.0-or-later
+// Copyright (c) 2025-2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 = Laniakea — Show Me The Receipts
 :toc:
+:toclevels: 3
 :icons: font
 
-The README makes claims. This file backs them up.
+The README makes claims. This file backs them up with code paths, caveats, and honest gaps.
+
+== Claim 1: Browsers Participate as Peer Nodes — CRDTs Guarantee Convergence
 
 [quote, README]
 ____
-Laniakea is a *transcendent architecture* for building distributed web applications where browsers participate as peer nodes in a BEAM cluster, not as dumb terminals receiving server pushes.
+Laniakea is a *transcendent architecture* for building distributed web applications where browsers
+participate as peer nodes in a BEAM cluster, not as dumb terminals receiving server pushes.
 ____
+
+*How it works:* The server side (`server/lib/laniakea/`) implements four CRDT types —
+`GCounter`, `PNCounter`, `ORSet`, and `LWWRegister` — each satisfying the join-semilattice laws
+(commutativity, associativity, idempotence) documented in `Laniakea.CRDT` behaviour. The
+`Laniakea.CRDT.Registry` GenServer stores active CRDTs by ID and broadcasts delta updates to
+connected WebSocket channels (`server/lib/laniakea_web/channels/`). The browser-side client
+(`client/`) mirrors CRDT state and applies local operations that merge correctly on reconnect.
+Today, transport is Phoenix Channels over WebSocket; WebTransport is the Phase 2 upgrade.
+
+*Honest caveat:* Phase 0 is demonstrable. The "browser as BEAM peer" vision requires a
+BEAM-in-WebAssembly runtime (Phase 3/4), which is still research-phase. Currently the browser
+runs CRDT semantics in ReScript/JavaScript, not actual BEAM/OTP. The supervision tree and process
+model in the browser are simulated, not native. Full BEAM semantics in-browser depends on
+Popcorn/AtomVM or a WASM compilation of the runtime that does not yet exist at production quality.
+
+== Claim 2: Offline-First — Local CRDT Operations Continue Without Connectivity
+
+[quote, README]
+____
+Offline-First: Local CRDT operations continue offline; state merges upon reconnection.
+____
+
+*How it works:* The client holds a local CRDT mirror. When the WebSocket connection drops, the
+client queues mutations in an offline outbox (`client/src/` outbox module). Upon reconnect, the
+outbox replays operations; the server merges them using the CRDT join operation, which is
+mathematically guaranteed to converge regardless of ordering or duplication. The
+`Laniakea.CommandBus` (`server/lib/laniakea/command/`) processes typed command envelopes
+(`crdt.increment`, etc.) and emits events that are broadcast to all connected clients.
+The `Laniakea.Policy` module (`server/lib/laniakea/policy/`) assigns clients to capability profiles
+(`:full_client`, `:constrained_client`, `:minimal_client`) based on declared capabilities, tuning
+update frequency and batching accordingly.
+
+*Honest caveat:* The offline outbox is implemented at a basic level. Conflict detection beyond
+CRDT merge (e.g., application-level business rule violations that CRDTs cannot resolve) requires
+additional logic that is not yet present. Long offline periods can also accumulate large outboxes
+whose replay behaviour under load has not been stress-tested.
+
+== Dogfooded Across The Account
+
+[cols="1,2,1"]
+|===
+| Repo | How Laniakea is used | Status
+
+| `laniakea` itself
+| CRDT behaviour spec and Registry are the foundation; Hypatia CI validates RSR workflows
+| Active
+
+| `burble`
+| Laniakea CRDT patterns referenced in Burble's distributed state design for real-time audio
+| Inspirational reference
+
+| `idaptik`
+| Browser-peer model under consideration for collaborative level-editor state
+| Exploratory
+
+| `gossamer`
+| CRDT-like convergence patterns for window state management borrow from Laniakea concepts
+| Conceptual
+|===
 
 == File Map
 
-[cols="1,2"]
+[cols="1,3"]
 |===
 | Path | What's There
 
-| `test(s)/` | Test suite
+| `server/lib/laniakea/crdt.ex`
+| `Laniakea.CRDT` behaviour: defines `new/0`, `value/1`, `merge/2` callbacks; documents the 3 semilattice laws
+
+| `server/lib/laniakea/crdt/g_counter.ex`
+| Grow-only counter: per-node increment map, merge via per-node max
+
+| `server/lib/laniakea/crdt/pn_counter.ex`
+| Positive-negative counter: two GCounters (increments + decrements)
+
+| `server/lib/laniakea/crdt/or_set.ex`
+| Observed-remove set: unique tags per element, merge resolves concurrent add/remove
+
+| `server/lib/laniakea/crdt/lww_register.ex`
+| Last-writer-wins register: timestamp-tagged value, merge picks higher timestamp
+
+| `server/lib/laniakea/crdt/registry.ex`
+| GenServer: stores CRDTs by ID, handles `get`/`update`/`merge` calls, broadcasts deltas
+
+| `server/lib/laniakea/command/`
+| Command bus: typed envelope processing (`crdt.increment`, etc.), returns event list
+
+| `server/lib/laniakea/policy/`
+| Capability negotiation: assigns `:full_client`/`:constrained_client`/`:minimal_client` profiles
+
+| `server/lib/laniakea_web/channels/`
+| Phoenix Channels: WebSocket transport for CRDT delta push to connected clients
+
+| `server/lib/laniakea_web/router.ex`
+| Phoenix router: HTTP + WebSocket endpoints
+
+| `server/lib/laniakea_web/endpoint.ex`
+| Phoenix endpoint config, socket registration
+
+| `server/mix.exs`
+| Elixir project definition, dependency versions
+
+| `client/src/`
+| ReScript/JS client: CRDT mirror, offline outbox, capability declaration, DOM rendering
+
+| `client/deno.json`
+| Deno configuration for client-side JS tooling
+
+| `schemas/`
+| JSON schemas for command/event envelopes
+
+| `bin/`
+| Developer utilities and start scripts
+
+| `Justfile`
+| Recipes: `server`, `client`, `test`, `check`, `panic`
+
+| `.github/workflows/`
+| RSR-standard CI: CodeQL, Hypatia, Scorecard, quality, mirror workflows
+
+| `.machine_readable/6a2/`
+| A2ML machine-readable artefacts (STATE, META, ECOSYSTEM, AGENTIC, NEUROSYM, PLAYBOOK)
 |===
 
 == Questions?
 
-Open an issue or reach out directly — happy to explain anything in more detail.
+Open an issue or reach out to Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>.
