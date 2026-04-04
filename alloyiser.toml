@@ -1,0 +1,25 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# alloyiser manifest for laniakea
+# Phoenix app — no standalone OpenAPI spec found; using router as source
+
+[project]
+name = "laniakea"
+
+[[specs]]
+name = "laniakea-phoenix-api"
+source = "/var/mnt/eclipse/repos/laniakea/server/lib/laniakea_web/router.ex"
+format = "openapi"
+
+[[assertions]]
+name = "no-orphan-records"
+check = "all r: Record | some r.owner"
+scope = 5
+
+[[assertions]]
+name = "auth-required-for-write"
+check = "all req: Request | req.method = POST implies some req.auth"
+scope = 5
+
+[alloy]
+solver = "sat4j"
+max-scope = 6
