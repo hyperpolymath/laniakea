@@ -1,0 +1,17 @@
+# Auto-generated K9 contract for deno-client
+# Safety tier: yard
+
+[must]
+compilerOptions.strict : string { == true }
+fmt.useTabs : string { == false }
+fmt.lineWidth : string { > 0 }
+fmt.indentWidth : string { > 0 }
+
+[trust]
+signed-by = "ci-pipeline"
+
+[dust]
+remove = ["deno bundle task (deprecated in Deno 2)", "jsx/jsxImportSource if not needed"]
+
+[intend]
+production-ready = true
