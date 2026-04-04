@@ -4,12 +4,12 @@
     "team"
   ],
   "capabilities": {
-    "primary": {
-      "description": "TODO: describe this service's primary capability",
+    "http": {
+      "description": "Distributed web application framework where browsers participate as peer nodes in a BEAM cluster.",
       "panel_compatible": true,
       "protocol": "cli",
       "requires_auth": false,
-      "type": "custom"
+      "type": "http"
     }
   },
   "consumes": [],
