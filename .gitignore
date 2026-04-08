@@ -85,3 +85,6 @@ htmlcov/
 *.cmt
 *.cmti
 *.cmi
+
+# wokelangiser generated i18n locale files (too large for GitHub)
+generated/wokelangiser/i18n/
