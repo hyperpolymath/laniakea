@@ -1,27 +1,36 @@
 # PROOF-NEEDS.md — laniakea
 
-## Current State
+## Current State (Updated 2026-04-11)
 
-- **src/abi/*.idr**: NO
+- **src/abi/crdt/*.idr**: 6 files (see below) — all CRDT algebraic proofs done
 - **Dangerous patterns**: 0
 - **LOC**: ~8,800 (Elixir)
-- **ABI layer**: Missing
+- **ABI layer**: Present — CRDT semilattice laws + 4 CRDT implementations
 
-## What Needs Proving
+## Completed Proofs
+
+| File | What it proves |
+|------|---------------|
+| `src/abi/crdt/SemilatticeLaws.idr` | Semilattice interface: merge commutativity + associativity + idempotence for all CRDT types |
+| `src/abi/crdt/MaxNat.idr` | MaxNat semilattice (max of two naturals satisfies all 3 laws) |
+| `src/abi/crdt/GCounter.idr` | G-Counter: vector of MaxNat values, implements Semilattice |
+| `src/abi/crdt/PNCounter.idr` | PN-Counter: two G-Counters (increments + decrements), implements Semilattice |
+| `src/abi/crdt/LWWRegister.idr` | LWW-Register: last-write-wins with timestamp ordering |
+| `src/abi/crdt/ORSet.idr` | OR-Set: observed-remove set with unique tags, implements Semilattice |
+
+## What Still Needs Proving
 
 | Component | What | Why |
 |-----------|------|-----|
-| CRDT convergence | G-Counter, PN-Counter, LWW-Register, OR-Set converge correctly | CRDTs MUST converge — this is their fundamental invariant |
-| CRDT merge commutativity | merge(a, b) == merge(b, a) for all CRDT types | Non-commutative merge breaks distributed consistency |
-| CRDT merge idempotence | merge(a, a) == a | Duplicate messages must not corrupt state |
-| CRDT merge associativity | merge(a, merge(b, c)) == merge(merge(a, b), c) | Required for correct multi-node convergence |
 | Policy engine decisions | Policy evaluation is deterministic and total | Inconsistent policy decisions across nodes break system |
 | Command bus ordering | Commands are delivered in causal order | Out-of-order commands corrupt CRDT state |
 
+The above are P2 and require deeper modeling of the Elixir policy engine and Phoenix PubSub command bus.
+
 ## Recommended Prover
 
-**Idris2** — CRDT algebraic properties (commutativity, associativity, idempotence) are ideal for dependent types. Alternatively **Agda** for the abstract algebra proofs, with Idris2 for the ABI layer.
+**Idris2** — Already in use; CRDT properties proved constructively.
 
 ## Priority
 
-**HIGH** — CRDTs are mathematically defined structures. If merge operations don't satisfy their algebraic laws, the entire distributed system fails silently. These are textbook proofs that SHOULD exist.
+**LOW** (was HIGH) — CRDT algebraic proofs complete 2026-04-11. Remaining items are higher-effort policy/ordering proofs at lower priority.
