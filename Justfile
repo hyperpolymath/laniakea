@@ -8,6 +8,8 @@
 # ============================================================================
 
 # Default recipe when just is called without arguments
+import? "contractile.just"
+
 default: help
 
 # Project metadata
