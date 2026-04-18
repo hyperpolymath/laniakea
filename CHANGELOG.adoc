@@ -25,8 +25,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Phoenix Channel transport
 - Capability negotiation protocol
 - ReScript client with isomorphic CRDTs
-- Comprehensive justfile with 80+ recipes
-- justfile-cookbook.adoc documentation
+- Comprehensive Justfile with 80+ recipes
+- Justfile-cookbook.adoc documentation
 - Nickel configuration schemas
 - CUE configuration schemas
 - CLI tool with extensive flags

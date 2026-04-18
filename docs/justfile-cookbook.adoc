@@ -12,7 +12,7 @@ toc::[]
 
 == Overview
 
-Laniakea uses https://github.com/casey/just[just] as its command runner. The justfile provides 80+ recipes for development, testing, building, and deployment.
+Laniakea uses https://github.com/casey/just[just] as its command runner. The Justfile provides 80+ recipes for development, testing, building, and deployment.
 
 === Quick Reference
 
@@ -745,7 +745,7 @@ Create a `justfile.local` for project-specific recipes:
 
 [source,just]
 ----
-# justfile.local
+# Justfile.local
 import "justfile"
 
 # My custom recipe
@@ -758,7 +758,7 @@ Then run:
 
 [source,bash]
 ----
-just -f justfile.local deploy-staging
+just -f Justfile.local deploy-staging
 ----
 
 == Troubleshooting
