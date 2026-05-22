@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-License-Identifier: MPL-2.0
 # Benchee benchmarks for Laniakea CRDT operations.
 #
 # Run with:   cd server && mix run bench/crdt_bench.exs
