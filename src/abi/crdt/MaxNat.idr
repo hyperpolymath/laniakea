@@ -1,5 +1,5 @@
 -- SPDX-License-Identifier: MPL-2.0
--- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath)
+-- Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 --
 -- MaxNat: Proofs that `maximum` on natural numbers forms a semilattice.
 -- This is the foundation for GCounter (pointwise max) and by extension

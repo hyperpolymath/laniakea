@@ -1,3 +1,7 @@
+<!--
+SPDX-License-Identifier: MPL-2.0
+Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+-->
 # Contributing to Laniakea
 
 First off, thank you for considering contributing to Laniakea! It's people like you that make Laniakea such a great tool for building distributed web applications.

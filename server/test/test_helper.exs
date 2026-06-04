@@ -1,4 +1,3 @@
-# SPDX-License-Identifier: MIT OR Apache-2.0
-# Copyright (c) 2024 Laniakea Contributors
-
+# SPDX-License-Identifier: MPL-2.0
+# Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 ExUnit.start(exclude: [:property])

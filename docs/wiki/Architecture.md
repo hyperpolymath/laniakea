@@ -1,3 +1,7 @@
+<!--
+SPDX-License-Identifier: MPL-2.0
+Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+-->
 # Laniakea Architecture
 
 > *Like galaxies flowing toward the Great Attractor, state in Laniakea converges toward consistency — without any node claiming to be the center.*

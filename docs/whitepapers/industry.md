@@ -1,3 +1,7 @@
+<!--
+SPDX-License-Identifier: MPL-2.0
+Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+-->
 # Laniakea: Distributed State Architecture for Modern Web Applications
 
 **Industry Whitepaper v1.0**
