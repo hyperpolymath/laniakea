@@ -10,17 +10,17 @@
     "fmt": "deno fmt",
     "lint": "deno lint",
     "bundle": "deno bundle src/Main.mjs dist/laniakea.bundle.js",
-    "compile-res": "rescript build",
-    "watch-res": "rescript build -w",
-    "clean": "rescript clean && rm -rf dist/",
-    "build": "rescript build",
-    "watch": "rescript build -w"
+    "compile-res": "deno run -A --node-modules-dir=auto npm:rescript build",
+    "watch-res": "deno run -A --node-modules-dir=auto npm:rescript build -w",
+    "clean": "deno run -A --node-modules-dir=auto npm:rescript clean && rm -rf dist/",
+    "build": "deno run -A --node-modules-dir=auto npm:rescript build",
+    "watch": "deno run -A --node-modules-dir=auto npm:rescript build -w"
   },
   "imports": {
     "@std/": "jsr:@std/",
     "@laniakea/": "./src/",
     "@rescript/core": "npm:@rescript/core@^1.6.1",
-    "rescript": "^12.0.0"
+    "rescript": "npm:rescript@^12.0.0"
   },
   "compilerOptions": {
     "strict": true,
