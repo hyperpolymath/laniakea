@@ -1,6 +1,5 @@
-// SPDX-License-Identifier: MPL-2.0
-// Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 #!/usr/bin/env -S deno run --allow-read --allow-write --allow-env --allow-net --allow-run
+// SPDX-License-Identifier: MPL-2.0 OR Apache-2.0
 // Laniakea CLI - Comprehensive command-line interface for workflow integration
 
 import { parse } from "https://deno.land/std@0.208.0/flags/mod.ts";

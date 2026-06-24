@@ -1,5 +1,6 @@
-# SPDX-License-Identifier: MPL-2.0
-# Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+# SPDX-License-Identifier: MPL-2.0 OR Apache-2.0
+# Copyright (c) 2024 Laniakea Contributors
+
 defmodule Laniakea.CRDT.PNCounter do
   @moduledoc """
   A Positive-Negative Counter (PN-Counter) CRDT.
