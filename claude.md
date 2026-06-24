@@ -235,8 +235,8 @@ laniakea/
 1. `server/lib/laniakea/crdt/g_counter.ex` — Reference CRDT implementation
 2. `server/lib/laniakea/policy.ex` — Capability negotiation logic
 3. `server/lib/laniakea_web/channels/crdt_channel.ex` — Transport layer
-4. `client/src/crdt/GCounter.res` — Client-side CRDT mirror
-5. `client/src/adapters/Capabilities.res` — Browser feature detection
+4. ReScript client CRDT modules under `client/src` — Client-side CRDT mirrors
+5. ReScript client adapter modules under `client/src` — Browser feature detection
 
 ## Glossary
 

@@ -677,7 +677,7 @@ just ci             # Full CI simulation
 ----
 # 1. Create files
 # server/lib/laniakea/crdt/my_crdt.ex
-# client/src/crdt/MyCrdt.res
+# Add the matching ReScript client module under client/src.
 
 # 2. Test implementation
 just test-property
