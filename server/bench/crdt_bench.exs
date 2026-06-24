@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: MPL-2.0
+# Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 # Benchee benchmarks for Laniakea CRDT operations.
 #
 # Run with:   cd server && mix run bench/crdt_bench.exs

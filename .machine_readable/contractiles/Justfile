@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: MPL-2.0 OR Apache-2.0
+# SPDX-License-Identifier: MIT OR Apache-2.0
 # Laniakea - Comprehensive Build System
 # Run `just --list` for available recipes
 # Run `just --help <recipe>` for recipe details

@@ -1,3 +1,7 @@
+<!--
+SPDX-License-Identifier: MPL-2.0
+Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+-->
 # Invariant Path Scan: industry.md
 
 ## Invariant: ip-87fe4acf3ee41be4
