@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: MIT OR Apache-2.0
+# SPDX-License-Identifier: MPL-2.0 OR Apache-2.0
 # Copyright (c) 2024 Laniakea Contributors
 
 defmodule Laniakea.CRDT.PNCounter do
