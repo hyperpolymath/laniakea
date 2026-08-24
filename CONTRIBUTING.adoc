@@ -1,58 +1,64 @@
-<!--
-SPDX-License-Identifier: CC-BY-SA-4.0
-Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
--->
-# Contributing to Laniakea
+== Contributing to Laniakea
 
-First off, thank you for considering contributing to Laniakea! It's people like you that make Laniakea such a great tool for building distributed web applications.
+First off, thank you for considering contributing to Laniakea! It’s
+people like you that make Laniakea such a great tool for building
+distributed web applications.
 
-## Table of Contents
+=== Table of Contents
 
-- [Code of Conduct](#code-of-conduct)
-- [TPCF Perimeter Model](#tpcf-perimeter-model)
-- [Getting Started](#getting-started)
-- [Development Setup](#development-setup)
-- [Making Changes](#making-changes)
-- [Pull Request Process](#pull-request-process)
-- [Style Guides](#style-guides)
-- [Testing](#testing)
-- [Documentation](#documentation)
+* link:#code-of-conduct[Code of Conduct]
+* link:#tpcf-perimeter-model[TPCF Perimeter Model]
+* link:#getting-started[Getting Started]
+* link:#development-setup[Development Setup]
+* link:#making-changes[Making Changes]
+* link:#pull-request-process[Pull Request Process]
+* link:#style-guides[Style Guides]
+* link:#testing[Testing]
+* link:#documentation[Documentation]
 
-## Code of Conduct
+=== Code of Conduct
 
-This project and everyone participating in it is governed by the [Laniakea Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code.
+This project and everyone participating in it is governed by the
+link:CODE_OF_CONDUCT.md[Laniakea Code of Conduct]. By participating, you
+are expected to uphold this code.
 
-## TPCF Perimeter Model
+=== TPCF Perimeter Model
 
-Laniakea uses the **Tri-Perimeter Contribution Framework (TPCF)** for graduated access:
+Laniakea uses the *Tri-Perimeter Contribution Framework (TPCF)* for
+graduated access:
 
-| Perimeter | Access Level | Requirements |
-|-----------|--------------|--------------|
-| **P1: Core** | Full commit access | Maintainer status, proven track record |
-| **P2: Trusted** | Review + merge for specific areas | Multiple accepted PRs, domain expertise |
-| **P3: Community** | PR submission, issue creation | Signed CLA, follows code of conduct |
+[width="100%",cols="30%,35%,35%",options="header",]
+|===
+|Perimeter |Access Level |Requirements
+|*P1: Core* |Full commit access |Maintainer status, proven track record
 
-New contributors start at P3. Advancement is based on:
-- Quality and quantity of contributions
-- Responsiveness to feedback
-- Community engagement
-- Domain expertise
+|*P2: Trusted* |Review + merge for specific areas |Multiple accepted
+PRs, domain expertise
 
-See [MAINTAINERS.md](MAINTAINERS.md) for current perimeter assignments.
+|*P3: Community* |PR submission, issue creation |Signed CLA, follows
+code of conduct
+|===
 
-## Getting Started
+New contributors start at P3. Advancement is based on: - Quality and
+quantity of contributions - Responsiveness to feedback - Community
+engagement - Domain expertise
 
-### Prerequisites
+See MAINTAINERS.md for current perimeter assignments.
 
-- **Elixir** >= 1.15
-- **Erlang/OTP** >= 26
-- **Node.js** >= 18
-- **just** (command runner)
-- **Nix** (optional, for reproducible builds)
+=== Getting Started
 
-### Quick Setup
+==== Prerequisites
 
-```bash
+* *Elixir* >= 1.15
+* *Erlang/OTP* >= 26
+* *Node.js* >= 18
+* *just* (command runner)
+* *Nix* (optional, for reproducible builds)
+
+==== Quick Setup
+
+[source,bash]
+----
 # Clone the repository
 git clone https://github.com/laniakea/laniakea.git
 cd laniakea
@@ -68,24 +74,26 @@ just test
 
 # Start development servers
 just dev
-```
+----
 
-## Development Setup
+=== Development Setup
 
-### With Nix (Recommended)
+==== With Nix (Recommended)
 
-```bash
+[source,bash]
+----
 # Enter development shell with all dependencies
 nix develop
 
 # Or use direnv for automatic activation
 echo "use flake" > .envrc
 direnv allow
-```
+----
 
-### Manual Setup
+==== Manual Setup
 
-```bash
+[source,bash]
+----
 # Server (Elixir)
 cd server
 mix deps.get
@@ -95,19 +103,20 @@ mix compile
 cd client
 npm install
 npm run build
-```
+----
 
-### Verify Setup
+==== Verify Setup
 
-```bash
+[source,bash]
+----
 just doctor  # Check all dependencies and configuration
-```
+----
 
-## Making Changes
+=== Making Changes
 
-### Branch Naming
+==== Branch Naming
 
-```
+....
 <type>/<short-description>
 
 Types:
@@ -122,61 +131,63 @@ Examples:
 - feat/delta-sync-protocol
 - fix/gcounter-merge-edge-case
 - docs/crdt-mathematical-proofs
-```
+....
 
-### Commit Messages
+==== Commit Messages
 
-We follow [Conventional Commits](https://www.conventionalcommits.org/):
+We follow https://www.conventionalcommits.org/[Conventional Commits]:
 
-```
+....
 <type>(<scope>): <description>
 
 [optional body]
 
 [optional footer(s)]
-```
+....
 
-**Types**: feat, fix, docs, style, refactor, perf, test, build, ci, chore
+*Types*: feat, fix, docs, style, refactor, perf, test, build, ci, chore
 
-**Scopes**: server, client, crdt, transport, policy, cli, docs
+*Scopes*: server, client, crdt, transport, policy, cli, docs
 
-**Examples**:
-```
+*Examples*:
+
+....
 feat(crdt): add OR-Set implementation with tombstone GC
 
 Implements Observed-Remove Set with garbage collection for tombstones.
 Includes mathematical proofs in docstrings.
 
 Closes #42
-```
+....
 
-```
+....
 fix(transport): handle WebSocket reconnection race condition
 
 The previous implementation could miss messages during reconnection
 if the server sent updates before the client fully rejoined.
 
 Fixes #108
-```
+....
 
-### Code Changes Checklist
+==== Code Changes Checklist
 
 Before submitting:
 
-- [ ] Code compiles without warnings (`just build`)
-- [ ] All tests pass (`just test`)
-- [ ] Dialyzer passes (`just dialyzer`)
-- [ ] Credo passes (`just lint`)
-- [ ] ReScript type checks (`just typecheck`)
-- [ ] Documentation updated if needed
-- [ ] CHANGELOG.md updated for user-facing changes
-- [ ] RSR compliance maintained (`just rsr-check`)
+* [ ] Code compiles without warnings (`+just build+`)
+* [ ] All tests pass (`+just test+`)
+* [ ] Dialyzer passes (`+just dialyzer+`)
+* [ ] Credo passes (`+just lint+`)
+* [ ] ReScript type checks (`+just typecheck+`)
+* [ ] Documentation updated if needed
+* [ ] CHANGELOG.md updated for user-facing changes
+* [ ] RSR compliance maintained (`+just rsr-check+`)
 
-## Pull Request Process
+=== Pull Request Process
 
-### 1. Create the PR
+==== 1. Create the PR
 
-```bash
+[source,bash]
+----
 # Create feature branch
 git checkout -b feat/my-feature
 
@@ -186,13 +197,14 @@ git commit -m "feat(scope): description"
 
 # Push and create PR
 git push -u origin feat/my-feature
-```
+----
 
-### 2. PR Template
+==== 2. PR Template
 
 Your PR description should include:
 
-```markdown
+[source,markdown]
+----
 ## Summary
 Brief description of changes.
 
@@ -213,28 +225,32 @@ Describe testing performed.
 
 ## Related Issues
 Closes #XX
-```
+----
 
-### 3. Review Process
+==== 3. Review Process
 
-1. **Automated checks** must pass (CI, linting, tests)
-2. **At least one maintainer** must approve
-3. **All conversations** must be resolved
-4. **Squash and merge** is the default strategy
+[arabic]
+. *Automated checks* must pass (CI, linting, tests)
+. *At least one maintainer* must approve
+. *All conversations* must be resolved
+. *Squash and merge* is the default strategy
 
-### 4. After Merge
+==== 4. After Merge
 
-- Delete your branch
-- Update related issues
-- Celebrate! 🎉
+* Delete your branch
+* Update related issues
+* Celebrate! 🎉
 
-## Style Guides
+=== Style Guides
 
-### Elixir
+==== Elixir
 
-We follow the [Elixir Style Guide](https://github.com/christopheradams/elixir_style_guide) with these additions:
+We follow the
+https://github.com/christopheradams/elixir_style_guide[Elixir Style
+Guide] with these additions:
 
-```elixir
+[source,elixir]
+----
 # Use @moduledoc and @doc for all public modules/functions
 @moduledoc """
 G-Counter CRDT implementation.
@@ -261,11 +277,12 @@ data
 |> validate()
 |> transform()
 |> persist()
-```
+----
 
-### ReScript
+==== ReScript
 
-```rescript
+[source,rescript]
+----
 // Use module types for complex structures
 module type CRDT = {
   type t
@@ -298,20 +315,22 @@ switch state {
 | Reconnecting(n) if n < 5 => retry()
 | Reconnecting(_) => giveUp()
 }
-```
+----
 
-### Documentation
+==== Documentation
 
-- Use AsciiDoc (`.adoc`) for long-form documentation
-- Use Markdown (`.md`) for GitHub-specific files (README, CONTRIBUTING, etc.)
-- Include mathematical proofs for CRDT operations
-- Provide examples for all public APIs
+* Use AsciiDoc (`+.adoc+`) for long-form documentation
+* Use Markdown (`+.md+`) for GitHub-specific files (README,
+CONTRIBUTING, etc.)
+* Include mathematical proofs for CRDT operations
+* Provide examples for all public APIs
 
-## Testing
+=== Testing
 
-### Elixir Tests
+==== Elixir Tests
 
-```bash
+[source,bash]
+----
 # Run all tests
 just test
 
@@ -323,31 +342,34 @@ just test-coverage
 
 # Property-based tests
 just test-property
-```
+----
 
-### ReScript Tests
+==== ReScript Tests
 
-```bash
+[source,bash]
+----
 # Run client tests
 just test-client
 
 # Watch mode
 just test-client-watch
-```
+----
 
-### Integration Tests
+==== Integration Tests
 
-```bash
+[source,bash]
+----
 # Full integration test suite
 just test-integration
 
 # Specific scenario
 just test-scenario offline-sync
-```
+----
 
-### Writing Tests
+==== Writing Tests
 
-```elixir
+[source,elixir]
+----
 # Elixir: Use ExUnit with property-based testing
 defmodule Laniakea.CRDT.GCounterTest do
   use ExUnit.Case, async: true
@@ -377,35 +399,39 @@ defmodule Laniakea.CRDT.GCounterTest do
     end
   end
 end
-```
+----
 
-## Documentation
+=== Documentation
 
-### Where to Document
+==== Where to Document
 
-| Content | Location |
-|---------|----------|
-| API reference | `@doc` / doc comments in code |
-| Architecture | `docs/wiki/Architecture.md` |
-| Tutorials | `docs/wiki/` |
-| CRDT theory | `docs/wiki/CRDTs.md` |
-| Changelog | `CHANGELOG.md` |
-| CLI usage | `laniakea --help` |
+[cols=",",options="header",]
+|===
+|Content |Location
+|API reference |`+@doc+` / doc comments in code
+|Architecture |`+docs/wiki/Architecture.md+`
+|Tutorials |`+docs/wiki/+`
+|CRDT theory |`+docs/wiki/CRDTs.md+`
+|Changelog |`+CHANGELOG.md+`
+|CLI usage |`+laniakea --help+`
+|===
 
-### Documentation Standards
+==== Documentation Standards
 
-- Every public function needs `@doc` or doc comment
-- Include type specifications (`@spec`)
-- Add examples that can be run as doctests
-- Document mathematical properties for CRDTs
-- Keep README.adoc up to date
+* Every public function needs `+@doc+` or doc comment
+* Include type specifications (`+@spec+`)
+* Add examples that can be run as doctests
+* Document mathematical properties for CRDTs
+* Keep README.adoc up to date
 
-## Questions?
+=== Questions?
 
-- **Discord**: [Join our server](https://discord.gg/laniakea)
-- **Discussions**: [GitHub Discussions](https://github.com/laniakea/laniakea/discussions)
-- **Issues**: [GitHub Issues](https://github.com/laniakea/laniakea/issues)
+* *Discord*: https://discord.gg/laniakea[Join our server]
+* *Discussions*: https://github.com/laniakea/laniakea/discussions[GitHub
+Discussions]
+* *Issues*: https://github.com/laniakea/laniakea/issues[GitHub Issues]
 
----
+'''''
 
-Thank you for contributing to Laniakea! Together, we're building the future of distributed web applications.
+Thank you for contributing to Laniakea! Together, we’re building the
+future of distributed web applications.
