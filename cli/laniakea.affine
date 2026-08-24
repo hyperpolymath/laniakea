@@ -1,27 +1,24 @@
 // SPDX-License-Identifier: MPL-2.0
-// Ported via Harvard Engine mechanical processor
+// Ported via Harvard Engine (Semantic pass)
 
 module laniakea;
 
-// TODO: Complete semantic implementation
-
-/* === ORIGINAL TYPESCRIPT CONTEXT ===
 #!/usr/bin/env -S deno run --allow-read --allow-write --allow-env --allow-net --allow-run
 // SPDX-License-Identifier: MPL-2.0 OR Apache-2.0
-// Laniakea CLI - Comprehensive command-line interface for workflow integration
+// Laniakea CLI - Comprehensive command-line struct for workflow integration
 
 import { parse } from "https://deno.land/std@0.208.0/flags/mod.ts";
 import { join, dirname, fromFileUrl } from "https://deno.land/std@0.208.0/path/mod.ts";
 import { exists } from "https://deno.land/std@0.208.0/fs/mod.ts";
 
-const VERSION = "0.1.0";
-const ROOT = dirname(dirname(fromFileUrl(import.meta.url)));
+let VERSION = "0.1.0";
+let ROOT = dirname(dirname(fromFileUrl(import.meta.url)));
 
 // ============================================================================
 // Types
 // ============================================================================
 
-interface Config {
+struct Config {
   server: {
     host: string;
     port: number;
@@ -46,7 +43,7 @@ interface Config {
   };
 }
 
-interface CommandResult {
+struct CommandResult {
   success: boolean;
   data?: unknown;
   error?: string;
@@ -57,7 +54,7 @@ interface CommandResult {
 // Color utilities
 // ============================================================================
 
-const colors = {
+let colors = {
   reset: "\x1b[0m",
   bold: "\x1b[1m",
   dim: "\x1b[2m",
@@ -69,7 +66,7 @@ const colors = {
   cyan: "\x1b[36m",
 };
 
-function colorize(text: string, color: keyof typeof colors, useColor: boolean): string {
+fn colorize(text: string, color: keyof typeof colors, useColor: boolean): string {
   if (!useColor) return text;
   return `${colors[color]}${text}${colors.reset}`;
 }
@@ -78,7 +75,7 @@ function colorize(text: string, color: keyof typeof colors, useColor: boolean): 
 // Output formatting
 // ============================================================================
 
-function formatOutput(data: unknown, format: Config["output"]["format"], useColor: boolean): string {
+fn formatOutput(data: unknown, format: Config["output"]["format"], useColor: boolean): string {
   switch (format) {
     case "json":
       return JSON.stringify(data, null, 2);
@@ -92,8 +89,8 @@ function formatOutput(data: unknown, format: Config["output"]["format"], useColo
   }
 }
 
-function toYaml(obj: unknown, indent = 0): string {
-  const spaces = "  ".repeat(indent);
+fn toYaml(obj: unknown, indent = 0): string {
+  let spaces = "  ".repeat(indent);
   if (obj === null || obj === undefined) return "null";
   if (typeof obj === "string") return obj.includes("\n") ? `|\n${obj.split("\n").map(l => spaces + "  " + l).join("\n")}` : obj;
   if (typeof obj === "number" || typeof obj === "boolean") return String(obj);
@@ -103,7 +100,7 @@ function toYaml(obj: unknown, indent = 0): string {
   if (typeof obj === "object") {
     return Object.entries(obj as Record<string, unknown>)
       .map(([k, v]) => {
-        const value = toYaml(v, indent + 1);
+        let value = toYaml(v, indent + 1);
         return typeof v === "object" && v !== null
           ? `${spaces}${k}:\n${value}`
           : `${spaces}${k}: ${value}`;
@@ -113,17 +110,17 @@ function toYaml(obj: unknown, indent = 0): string {
   return String(obj);
 }
 
-function toTable(data: unknown, useColor: boolean): string {
+fn toTable(data: unknown, useColor: boolean): string {
   if (!Array.isArray(data) || data.length === 0) {
     return formatOutput(data, "plain", useColor);
   }
 
-  const headers = Object.keys(data[0] as Record<string, unknown>);
-  const widths = headers.map(h => Math.max(h.length, ...data.map(row => String((row as Record<string, unknown>)[h] ?? "").length)));
+  let headers = Object.keys(data[0] as Record<string, unknown>);
+  let widths = headers.map(h => Math.max(h.length, ...data.map(row => String((row as Record<string, unknown>)[h] ?? "").length)));
 
-  const separator = "+" + widths.map(w => "-".repeat(w + 2)).join("+") + "+";
-  const headerRow = "|" + headers.map((h, i) => ` ${colorize(h.padEnd(widths[i]), "bold", useColor)} `).join("|") + "|";
-  const rows = data.map(row =>
+  let separator = "+" + widths.map(w => "-".repeat(w + 2)).join("+") + "+";
+  let headerRow = "|" + headers.map((h, i) => ` ${colorize(h.padEnd(widths[i]), "bold", useColor)} `).join("|") + "|";
+  let rows = data.map(row =>
     "|" + headers.map((h, i) => ` ${String((row as Record<string, unknown>)[h] ?? "").padEnd(widths[i])} `).join("|") + "|"
   );
 
@@ -134,8 +131,8 @@ function toTable(data: unknown, useColor: boolean): string {
 // Configuration loading
 // ============================================================================
 
-async function loadConfig(configPath?: string): Promise<Partial<Config>> {
-  const paths = configPath
+async fn loadConfig(configPath?: string): Partial<Config> {
+  let paths = configPath
     ? [configPath]
     : [
         join(ROOT, "laniakea.json"),
@@ -146,7 +143,7 @@ async function loadConfig(configPath?: string): Promise<Partial<Config>> {
 
   for (const path of paths) {
     if (await exists(path)) {
-      const content = await Deno.readTextFile(path);
+      let content = await Deno.readTextFile(path);
       return path.endsWith(".yaml") ? parseYaml(content) : JSON.parse(content);
     }
   }
@@ -154,7 +151,7 @@ async function loadConfig(configPath?: string): Promise<Partial<Config>> {
   return {};
 }
 
-function parseYaml(content: string): Record<string, unknown> {
+fn parseYaml(content: string): Record<string, unknown> {
   // Simple YAML parser for basic configs
   const result: Record<string, unknown> = {};
   let currentKey = "";
@@ -162,7 +159,7 @@ function parseYaml(content: string): Record<string, unknown> {
 
   for (const line of content.split("\n")) {
     if (line.trim().startsWith("#") || !line.trim()) continue;
-    const match = line.match(/^(\s*)([^:]+):\s*(.*)$/);
+    let match = line.match(/^(\s*)([^:]+):\s*(.*)$/);
     if (match) {
       const [, indent, key, value] = match;
       if (value) {
@@ -174,7 +171,7 @@ function parseYaml(content: string): Record<string, unknown> {
   return result;
 }
 
-function mergeConfig(base: Partial<Config>, overrides: Record<string, unknown>): Config {
+fn mergeConfig(base: Partial<Config>, overrides: Record<string, unknown>): Config {
   return {
     server: {
       host: (overrides.host as string) ?? base.server?.host ?? "localhost",
@@ -205,8 +202,8 @@ function mergeConfig(base: Partial<Config>, overrides: Record<string, unknown>):
 // Commands
 // ============================================================================
 
-async function cmdVersion(_args: string[], config: Config): Promise<CommandResult> {
-  const info = {
+async fn cmdVersion(_args: string[], config: Config): CommandResult {
+  let info = {
     version: VERSION,
     elixir: await getElixirVersion(),
     erlang: await getErlangVersion(),
@@ -219,20 +216,20 @@ async function cmdVersion(_args: string[], config: Config): Promise<CommandResul
   return { success: true, data: info, exitCode: 0 };
 }
 
-async function getElixirVersion(): Promise<string> {
+async fn getElixirVersion(): string {
   try {
-    const p = new Deno.Command("elixir", { args: ["--version"], stdout: "piped", stderr: "null" });
+    let p = new Deno.Command("elixir", { args: ["--version"], stdout: "piped", stderr: "null" });
     const { stdout } = await p.output();
-    const match = new TextDecoder().decode(stdout).match(/Elixir (\d+\.\d+\.\d+)/);
+    let match = new TextDecoder().decode(stdout).match(/Elixir (\d+\.\d+\.\d+)/);
     return match?.[1] ?? "not found";
   } catch {
     return "not found";
   }
 }
 
-async function getErlangVersion(): Promise<string> {
+async fn getErlangVersion(): string {
   try {
-    const p = new Deno.Command("erl", { args: ["-eval", "io:format(\"~s\", [erlang:system_info(otp_release)]), halt().", "-noshell"], stdout: "piped", stderr: "null" });
+    let p = new Deno.Command("erl", { args: ["-eval", "io:format(\"~s\", [erlang:system_info(otp_release)]), halt().", "-noshell"], stdout: "piped", stderr: "null" });
     const { stdout } = await p.output();
     return new TextDecoder().decode(stdout) || "not found";
   } catch {
@@ -240,11 +237,11 @@ async function getErlangVersion(): Promise<string> {
   }
 }
 
-async function cmdDoctor(_args: string[], config: Config): Promise<CommandResult> {
+async fn cmdDoctor(_args: string[], config: Config): CommandResult {
   const checks: Array<{ name: string; status: string; details: string }> = [];
 
   // Check Elixir
-  const elixirVersion = await getElixirVersion();
+  let elixirVersion = await getElixirVersion();
   checks.push({
     name: "Elixir",
     status: elixirVersion !== "not found" ? "ok" : "missing",
@@ -252,7 +249,7 @@ async function cmdDoctor(_args: string[], config: Config): Promise<CommandResult
   });
 
   // Check Erlang/OTP
-  const erlangVersion = await getErlangVersion();
+  let erlangVersion = await getErlangVersion();
   checks.push({
     name: "Erlang/OTP",
     status: erlangVersion !== "not found" ? "ok" : "missing",
@@ -268,7 +265,7 @@ async function cmdDoctor(_args: string[], config: Config): Promise<CommandResult
 
   // Check ReScript
   try {
-    const p = new Deno.Command("npx", { args: ["rescript", "-version"], stdout: "piped", stderr: "null" });
+    let p = new Deno.Command("npx", { args: ["rescript", "-version"], stdout: "piped", stderr: "null" });
     const { stdout, success } = await p.output();
     checks.push({
       name: "ReScript",
@@ -281,8 +278,8 @@ async function cmdDoctor(_args: string[], config: Config): Promise<CommandResult
 
   // Check ArangoDB
   try {
-    const response = await fetch(`http://${config.database.host}:${config.database.port}/_api/version`);
-    const data = await response.json();
+    let response = await fetch(`http://${config.database.host}:${config.database.port}/_api/version`);
+    let data = await response.json();
     checks.push({
       name: "ArangoDB",
       status: "ok",
@@ -294,7 +291,7 @@ async function cmdDoctor(_args: string[], config: Config): Promise<CommandResult
 
   // Check just
   try {
-    const p = new Deno.Command("just", { args: ["--version"], stdout: "piped", stderr: "null" });
+    let p = new Deno.Command("just", { args: ["--version"], stdout: "piped", stderr: "null" });
     const { stdout, success } = await p.output();
     checks.push({
       name: "just",
@@ -307,7 +304,7 @@ async function cmdDoctor(_args: string[], config: Config): Promise<CommandResult
 
   // Check nickel
   try {
-    const p = new Deno.Command("nickel", { args: ["--version"], stdout: "piped", stderr: "null" });
+    let p = new Deno.Command("nickel", { args: ["--version"], stdout: "piped", stderr: "null" });
     const { stdout, success } = await p.output();
     checks.push({
       name: "Nickel",
@@ -320,7 +317,7 @@ async function cmdDoctor(_args: string[], config: Config): Promise<CommandResult
 
   // Check Docker
   try {
-    const p = new Deno.Command("docker", { args: ["--version"], stdout: "piped", stderr: "null" });
+    let p = new Deno.Command("docker", { args: ["--version"], stdout: "piped", stderr: "null" });
     const { stdout, success } = await p.output();
     checks.push({
       name: "Docker",
@@ -331,13 +328,13 @@ async function cmdDoctor(_args: string[], config: Config): Promise<CommandResult
     checks.push({ name: "Docker", status: "optional", details: "not found" });
   }
 
-  const allOk = checks.every(c => c.status === "ok" || c.status === "optional");
+  let allOk = checks.every(c => c.status === "ok" || c.status === "optional");
 
   if (config.output.format === "plain") {
     console.log(colorize("\n=== Laniakea System Check ===\n", "bold", config.output.color));
     for (const check of checks) {
-      const statusColor = check.status === "ok" ? "green" : check.status === "optional" ? "yellow" : "red";
-      const symbol = check.status === "ok" ? "✓" : check.status === "optional" ? "○" : "✗";
+      let statusColor = check.status === "ok" ? "green" : check.status === "optional" ? "yellow" : "red";
+      let symbol = check.status === "ok" ? "✓" : check.status === "optional" ? "○" : "✗";
       console.log(`${colorize(symbol, statusColor, config.output.color)} ${check.name}: ${check.details}`);
     }
     console.log(allOk
@@ -351,8 +348,8 @@ async function cmdDoctor(_args: string[], config: Config): Promise<CommandResult
   return { success: allOk, data: checks, exitCode: allOk ? 0 : 1 };
 }
 
-async function cmdServer(args: string[], config: Config): Promise<CommandResult> {
-  const subcommand = args[0] ?? "start";
+async fn cmdServer(args: string[], config: Config): CommandResult {
+  let subcommand = args[0] ?? "start";
 
   switch (subcommand) {
     case "start": {
@@ -369,7 +366,7 @@ async function cmdServer(args: string[], config: Config): Promise<CommandResult>
         console.log(colorize(`Starting server at http://${config.server.host}:${config.server.port}`, "cyan", config.output.color));
       }
 
-      const p = new Deno.Command("mix", {
+      let p = new Deno.Command("mix", {
         args: ["phx.server"],
         cwd: join(ROOT, "server"),
         env: { ...Deno.env.toObject(), ...env },
@@ -383,7 +380,7 @@ async function cmdServer(args: string[], config: Config): Promise<CommandResult>
     }
 
     case "iex": {
-      const p = new Deno.Command("iex", {
+      let p = new Deno.Command("iex", {
         args: ["-S", "mix", "phx.server"],
         cwd: join(ROOT, "server"),
         stdin: "inherit",
@@ -396,13 +393,13 @@ async function cmdServer(args: string[], config: Config): Promise<CommandResult>
     }
 
     case "release": {
-      const env = { MIX_ENV: "prod" };
+      let env = { MIX_ENV: "prod" };
 
       if (!config.output.quiet) {
         console.log(colorize("Building release...", "cyan", config.output.color));
       }
 
-      const compile = new Deno.Command("mix", {
+      let compile = new Deno.Command("mix", {
         args: ["compile"],
         cwd: join(ROOT, "server"),
         env: { ...Deno.env.toObject(), ...env },
@@ -411,7 +408,7 @@ async function cmdServer(args: string[], config: Config): Promise<CommandResult>
       });
       await compile.output();
 
-      const release = new Deno.Command("mix", {
+      let release = new Deno.Command("mix", {
         args: ["release"],
         cwd: join(ROOT, "server"),
         env: { ...Deno.env.toObject(), ...env },
@@ -434,8 +431,8 @@ async function cmdServer(args: string[], config: Config): Promise<CommandResult>
   }
 }
 
-async function cmdClient(args: string[], config: Config): Promise<CommandResult> {
-  const subcommand = args[0] ?? "build";
+async fn cmdClient(args: string[], config: Config): CommandResult {
+  let subcommand = args[0] ?? "build";
 
   switch (subcommand) {
     case "build": {
@@ -443,7 +440,7 @@ async function cmdClient(args: string[], config: Config): Promise<CommandResult>
         console.log(colorize("Building ReScript...", "cyan", config.output.color));
       }
 
-      const rescript = new Deno.Command("npx", {
+      let rescript = new Deno.Command("npx", {
         args: ["rescript"],
         cwd: join(ROOT, "client"),
         stdout: config.output.quiet ? "null" : "inherit",
@@ -459,7 +456,7 @@ async function cmdClient(args: string[], config: Config): Promise<CommandResult>
         console.log(colorize("Bundling with Deno...", "cyan", config.output.color));
       }
 
-      const bundle = new Deno.Command("deno", {
+      let bundle = new Deno.Command("deno", {
         args: ["bundle", "src/Main.mjs", "dist/laniakea.bundle.js"],
         cwd: join(ROOT, "client"),
         stdout: config.output.quiet ? "null" : "inherit",
@@ -476,7 +473,7 @@ async function cmdClient(args: string[], config: Config): Promise<CommandResult>
     }
 
     case "watch": {
-      const p = new Deno.Command("npx", {
+      let p = new Deno.Command("npx", {
         args: ["rescript", "build", "-w"],
         cwd: join(ROOT, "client"),
         stdin: "inherit",
@@ -489,7 +486,7 @@ async function cmdClient(args: string[], config: Config): Promise<CommandResult>
     }
 
     case "clean": {
-      const p = new Deno.Command("npx", {
+      let p = new Deno.Command("npx", {
         args: ["rescript", "clean"],
         cwd: join(ROOT, "client"),
         stdout: config.output.quiet ? "null" : "inherit",
@@ -506,9 +503,9 @@ async function cmdClient(args: string[], config: Config): Promise<CommandResult>
   }
 }
 
-async function cmdTest(args: string[], config: Config): Promise<CommandResult> {
-  const target = args[0] ?? "all";
-  const file = args[1];
+async fn cmdTest(args: string[], config: Config): CommandResult {
+  let target = args[0] ?? "all";
+  let file = args[1];
 
   const results: Array<{ target: string; success: boolean }> = [];
 
@@ -517,10 +514,10 @@ async function cmdTest(args: string[], config: Config): Promise<CommandResult> {
       console.log(colorize("\n=== Server Tests ===\n", "bold", config.output.color));
     }
 
-    const testArgs = file ? ["test", file] : ["test"];
+    let testArgs = file ? ["test", file] : ["test"];
     if (config.output.verbose) testArgs.push("--trace");
 
-    const p = new Deno.Command("mix", {
+    let p = new Deno.Command("mix", {
       args: testArgs,
       cwd: join(ROOT, "server"),
       stdout: "inherit",
@@ -536,7 +533,7 @@ async function cmdTest(args: string[], config: Config): Promise<CommandResult> {
       console.log(colorize("\n=== Client Tests ===\n", "bold", config.output.color));
     }
 
-    const p = new Deno.Command("deno", {
+    let p = new Deno.Command("deno", {
       args: ["test", "--allow-net", "test/"],
       cwd: join(ROOT, "client"),
       stdout: "inherit",
@@ -552,9 +549,9 @@ async function cmdTest(args: string[], config: Config): Promise<CommandResult> {
       console.log(colorize("\n=== CRDT Verification ===\n", "bold", config.output.color));
     }
 
-    const crdts = ["GCounter", "PNCounter", "ORSet", "LWWRegister"];
+    let crdts = ["GCounter", "PNCounter", "ORSet", "LWWRegister"];
     for (const crdt of crdts) {
-      const p = new Deno.Command("mix", {
+      let p = new Deno.Command("mix", {
         args: ["run", "-e", `:ok = Laniakea.CRDT.verify(Laniakea.CRDT.${crdt})`],
         cwd: join(ROOT, "server"),
         stdout: "piped",
@@ -562,12 +559,12 @@ async function cmdTest(args: string[], config: Config): Promise<CommandResult> {
       });
 
       const { code } = await p.output();
-      const status = code === 0;
+      let status = code === 0;
       results.push({ target: `crdt:${crdt}`, success: status });
 
       if (!config.output.quiet) {
-        const symbol = status ? "✓" : "✗";
-        const color = status ? "green" : "red";
+        let symbol = status ? "✓" : "✗";
+        let color = status ? "green" : "red";
         console.log(`${colorize(symbol, color, config.output.color)} ${crdt}`);
       }
     }
@@ -578,7 +575,7 @@ async function cmdTest(args: string[], config: Config): Promise<CommandResult> {
       console.log(colorize("\n=== Property Tests ===\n", "bold", config.output.color));
     }
 
-    const p = new Deno.Command("mix", {
+    let p = new Deno.Command("mix", {
       args: ["test", "--only", "property"],
       cwd: join(ROOT, "server"),
       stdout: "inherit",
@@ -589,7 +586,7 @@ async function cmdTest(args: string[], config: Config): Promise<CommandResult> {
     results.push({ target: "property", success: code === 0 });
   }
 
-  const allPassed = results.every(r => r.success);
+  let allPassed = results.every(r => r.success);
 
   if (config.output.format !== "plain") {
     console.log(formatOutput(results, config.output.format, config.output.color));
@@ -598,8 +595,8 @@ async function cmdTest(args: string[], config: Config): Promise<CommandResult> {
   return { success: allPassed, data: results, exitCode: allPassed ? 0 : 1 };
 }
 
-async function cmdQuality(args: string[], config: Config): Promise<CommandResult> {
-  const check = args[0] ?? "all";
+async fn cmdQuality(args: string[], config: Config): CommandResult {
+  let check = args[0] ?? "all";
   const results: Array<{ check: string; success: boolean }> = [];
 
   if (check === "all" || check === "format") {
@@ -608,7 +605,7 @@ async function cmdQuality(args: string[], config: Config): Promise<CommandResult
     }
 
     // Server format
-    const serverFmt = new Deno.Command("mix", {
+    let serverFmt = new Deno.Command("mix", {
       args: ["format", "--check-formatted"],
       cwd: join(ROOT, "server"),
       stdout: "null",
@@ -618,7 +615,7 @@ async function cmdQuality(args: string[], config: Config): Promise<CommandResult
     results.push({ check: "format:server", success: sfCode === 0 });
 
     // Client format
-    const clientFmt = new Deno.Command("deno", {
+    let clientFmt = new Deno.Command("deno", {
       args: ["fmt", "--check"],
       cwd: join(ROOT, "client"),
       stdout: "null",
@@ -634,7 +631,7 @@ async function cmdQuality(args: string[], config: Config): Promise<CommandResult
     }
 
     // Credo
-    const credo = new Deno.Command("mix", {
+    let credo = new Deno.Command("mix", {
       args: ["credo", "--strict"],
       cwd: join(ROOT, "server"),
       stdout: config.output.verbose ? "inherit" : "null",
@@ -644,7 +641,7 @@ async function cmdQuality(args: string[], config: Config): Promise<CommandResult
     results.push({ check: "lint:credo", success: credoCode === 0 });
 
     // Deno lint
-    const denoLint = new Deno.Command("deno", {
+    let denoLint = new Deno.Command("deno", {
       args: ["lint"],
       cwd: join(ROOT, "client"),
       stdout: config.output.verbose ? "inherit" : "null",
@@ -660,7 +657,7 @@ async function cmdQuality(args: string[], config: Config): Promise<CommandResult
     }
 
     // Dialyzer
-    const dialyzer = new Deno.Command("mix", {
+    let dialyzer = new Deno.Command("mix", {
       args: ["dialyzer"],
       cwd: join(ROOT, "server"),
       stdout: config.output.verbose ? "inherit" : "null",
@@ -670,7 +667,7 @@ async function cmdQuality(args: string[], config: Config): Promise<CommandResult
     results.push({ check: "typecheck:dialyzer", success: dCode === 0 });
 
     // Deno check
-    const denoCheck = new Deno.Command("deno", {
+    let denoCheck = new Deno.Command("deno", {
       args: ["check", "src/**/*.mjs"],
       cwd: join(ROOT, "client"),
       stdout: config.output.verbose ? "inherit" : "null",
@@ -680,13 +677,13 @@ async function cmdQuality(args: string[], config: Config): Promise<CommandResult
     results.push({ check: "typecheck:deno", success: dcCode === 0 });
   }
 
-  const allPassed = results.every(r => r.success);
+  let allPassed = results.every(r => r.success);
 
   if (config.output.format === "plain" && !config.output.quiet) {
     console.log(colorize("\n=== Quality Results ===\n", "bold", config.output.color));
     for (const r of results) {
-      const symbol = r.success ? "✓" : "✗";
-      const color = r.success ? "green" : "red";
+      let symbol = r.success ? "✓" : "✗";
+      let color = r.success ? "green" : "red";
       console.log(`${colorize(symbol, color, config.output.color)} ${r.check}`);
     }
   } else if (config.output.format !== "plain") {
@@ -696,12 +693,12 @@ async function cmdQuality(args: string[], config: Config): Promise<CommandResult
   return { success: allPassed, data: results, exitCode: allPassed ? 0 : 1 };
 }
 
-async function cmdCrdt(args: string[], config: Config): Promise<CommandResult> {
-  const subcommand = args[0] ?? "list";
+async fn cmdCrdt(args: string[], config: Config): CommandResult {
+  let subcommand = args[0] ?? "list";
 
   switch (subcommand) {
     case "list": {
-      const crdts = [
+      let crdts = [
         { name: "GCounter", description: "Grow-only counter", operations: ["increment", "value", "merge"] },
         { name: "PNCounter", description: "Positive-negative counter", operations: ["increment", "decrement", "value", "merge"] },
         { name: "ORSet", description: "Observed-remove set", operations: ["add", "remove", "contains", "elements", "merge"] },
@@ -721,7 +718,7 @@ async function cmdCrdt(args: string[], config: Config): Promise<CommandResult> {
         console.log(colorize("Running CRDT benchmarks...", "cyan", config.output.color));
       }
 
-      const p = new Deno.Command("mix", {
+      let p = new Deno.Command("mix", {
         args: ["run", "bench/crdt_bench.exs"],
         cwd: join(ROOT, "server"),
         stdout: "inherit",
@@ -738,20 +735,20 @@ async function cmdCrdt(args: string[], config: Config): Promise<CommandResult> {
   }
 }
 
-async function cmdDb(args: string[], config: Config): Promise<CommandResult> {
-  const subcommand = args[0] ?? "status";
-  const dbUrl = `http://${config.database.host}:${config.database.port}`;
-  const auth = btoa(`${config.database.user}:${config.database.password ?? ""}`);
+async fn cmdDb(args: string[], config: Config): CommandResult {
+  let subcommand = args[0] ?? "status";
+  let dbUrl = `http://${config.database.host}:${config.database.port}`;
+  let auth = btoa(`${config.database.user}:${config.database.password ?? ""}`);
 
   switch (subcommand) {
     case "status": {
       try {
-        const response = await fetch(`${dbUrl}/_api/version`, {
+        let response = await fetch(`${dbUrl}/_api/version`, {
           headers: { Authorization: `Basic ${auth}` },
         });
-        const data = await response.json();
+        let data = await response.json();
 
-        const status = {
+        let status = {
           connected: true,
           host: config.database.host,
           port: config.database.port,
@@ -762,7 +759,7 @@ async function cmdDb(args: string[], config: Config): Promise<CommandResult> {
         console.log(formatOutput(status, config.output.format, config.output.color));
         return { success: true, data: status, exitCode: 0 };
       } catch (e) {
-        const status = {
+        let status = {
           connected: false,
           host: config.database.host,
           port: config.database.port,
@@ -798,7 +795,7 @@ async function cmdDb(args: string[], config: Config): Promise<CommandResult> {
       }
 
       // Create collections
-      const collections = ["crdts", "events", "clients", "sessions"];
+      let collections = ["crdts", "events", "clients", "sessions"];
       for (const collection of collections) {
         try {
           await fetch(`${dbUrl}/_db/${config.database.name}/_api/collection`, {
@@ -826,7 +823,7 @@ async function cmdDb(args: string[], config: Config): Promise<CommandResult> {
         console.log(colorize("Starting ArangoDB...", "cyan", config.output.color));
       }
 
-      const p = new Deno.Command("docker", {
+      let p = new Deno.Command("docker", {
         args: [
           "run", "-d",
           "--name", "laniakea-arangodb",
@@ -843,7 +840,7 @@ async function cmdDb(args: string[], config: Config): Promise<CommandResult> {
     }
 
     case "stop": {
-      const p = new Deno.Command("docker", {
+      let p = new Deno.Command("docker", {
         args: ["stop", "laniakea-arangodb"],
         stdout: config.output.quiet ? "null" : "inherit",
         stderr: "inherit",
@@ -851,7 +848,7 @@ async function cmdDb(args: string[], config: Config): Promise<CommandResult> {
 
       await p.output();
 
-      const rm = new Deno.Command("docker", {
+      let rm = new Deno.Command("docker", {
         args: ["rm", "laniakea-arangodb"],
         stdout: "null",
         stderr: "null",
@@ -867,8 +864,8 @@ async function cmdDb(args: string[], config: Config): Promise<CommandResult> {
   }
 }
 
-async function cmdDocker(args: string[], config: Config): Promise<CommandResult> {
-  const subcommand = args[0] ?? "build";
+async fn cmdDocker(args: string[], config: Config): CommandResult {
+  let subcommand = args[0] ?? "build";
 
   switch (subcommand) {
     case "build": {
@@ -876,7 +873,7 @@ async function cmdDocker(args: string[], config: Config): Promise<CommandResult>
         console.log(colorize("Building Docker image...", "cyan", config.output.color));
       }
 
-      const p = new Deno.Command("docker", {
+      let p = new Deno.Command("docker", {
         args: ["build", "-t", `laniakea:${VERSION}`, "."],
         cwd: ROOT,
         stdout: "inherit",
@@ -888,7 +885,7 @@ async function cmdDocker(args: string[], config: Config): Promise<CommandResult>
     }
 
     case "run": {
-      const p = new Deno.Command("docker", {
+      let p = new Deno.Command("docker", {
         args: [
           "run", "-it", "--rm",
           "-p", `${config.server.port}:4000`,
@@ -904,20 +901,20 @@ async function cmdDocker(args: string[], config: Config): Promise<CommandResult>
     }
 
     case "push": {
-      const registry = args[1];
+      let registry = args[1];
       if (!registry) {
         console.error(colorize("Usage: laniakea docker push <registry>", "red", config.output.color));
         return { success: false, error: "Missing registry argument", exitCode: 1 };
       }
 
-      const tag = new Deno.Command("docker", {
+      let tag = new Deno.Command("docker", {
         args: ["tag", `laniakea:${VERSION}`, `${registry}/laniakea:${VERSION}`],
         stdout: "inherit",
         stderr: "inherit",
       });
       await tag.output();
 
-      const push = new Deno.Command("docker", {
+      let push = new Deno.Command("docker", {
         args: ["push", `${registry}/laniakea:${VERSION}`],
         stdout: "inherit",
         stderr: "inherit",
@@ -928,8 +925,8 @@ async function cmdDocker(args: string[], config: Config): Promise<CommandResult>
     }
 
     case "compose": {
-      const action = args[1] ?? "up";
-      const p = new Deno.Command("docker", {
+      let action = args[1] ?? "up";
+      let p = new Deno.Command("docker", {
         args: ["compose", action, ...(action === "up" ? ["-d"] : [])],
         cwd: ROOT,
         stdout: "inherit",
@@ -946,8 +943,8 @@ async function cmdDocker(args: string[], config: Config): Promise<CommandResult>
   }
 }
 
-async function cmdConfig(args: string[], config: Config): Promise<CommandResult> {
-  const subcommand = args[0] ?? "show";
+async fn cmdConfig(args: string[], config: Config): CommandResult {
+  let subcommand = args[0] ?? "show";
 
   switch (subcommand) {
     case "show": {
@@ -960,7 +957,7 @@ async function cmdConfig(args: string[], config: Config): Promise<CommandResult>
         console.log(colorize("Validating Nickel configuration...", "cyan", config.output.color));
       }
 
-      const p = new Deno.Command("nickel", {
+      let p = new Deno.Command("nickel", {
         args: ["export", "--format", "json", join(ROOT, "schemas/config.ncl")],
         stdout: "piped",
         stderr: "piped",
@@ -984,10 +981,10 @@ async function cmdConfig(args: string[], config: Config): Promise<CommandResult>
     }
 
     case "export": {
-      const outputPath = args[1] ?? "config.json";
-      const format = args[2] ?? "json";
+      let outputPath = args[1] ?? "config.json";
+      let format = args[2] ?? "json";
 
-      const p = new Deno.Command("nickel", {
+      let p = new Deno.Command("nickel", {
         args: ["export", "--format", format, join(ROOT, "schemas/config.ncl")],
         stdout: "piped",
         stderr: "piped",
@@ -1006,13 +1003,13 @@ async function cmdConfig(args: string[], config: Config): Promise<CommandResult>
     }
 
     case "generate": {
-      const env = args[1] ?? "dev";
+      let env = args[1] ?? "dev";
 
       if (!config.output.quiet) {
         console.log(colorize(`Generating ${env} configuration...`, "cyan", config.output.color));
       }
 
-      const p = new Deno.Command("nickel", {
+      let p = new Deno.Command("nickel", {
         args: [
           "export",
           "--format", "json",
@@ -1026,7 +1023,7 @@ async function cmdConfig(args: string[], config: Config): Promise<CommandResult>
       const { code, stdout } = await p.output();
 
       if (code === 0) {
-        const outputPath = join(ROOT, "server/config/generated.json");
+        let outputPath = join(ROOT, "server/config/generated.json");
         await Deno.writeFile(outputPath, stdout);
         if (!config.output.quiet) {
           console.log(colorize(`Generated configuration at ${outputPath}`, "green", config.output.color));
@@ -1042,12 +1039,12 @@ async function cmdConfig(args: string[], config: Config): Promise<CommandResult>
   }
 }
 
-async function cmdRsr(args: string[], config: Config): Promise<CommandResult> {
-  const level = args[0] ?? "check";
+async fn cmdRsr(args: string[], config: Config): CommandResult {
+  let level = args[0] ?? "check";
   const results: Array<{ requirement: string; status: string }> = [];
 
   // Check required files
-  const requiredFiles = [
+  let requiredFiles = [
     "README.adoc",
     "LICENSE",
     "SECURITY.md",
@@ -1064,8 +1061,8 @@ async function cmdRsr(args: string[], config: Config): Promise<CommandResult> {
 
   // File checks
   for (const file of requiredFiles) {
-    const filePath = join(ROOT, file);
-    const fileExists = await exists(filePath);
+    let filePath = join(ROOT, file);
+    let fileExists = await exists(filePath);
     results.push({
       requirement: `File: ${file}`,
       status: fileExists ? "pass" : "fail",
@@ -1074,7 +1071,7 @@ async function cmdRsr(args: string[], config: Config): Promise<CommandResult> {
 
   // Type safety (Dialyzer)
   if (level === "bronze" || level === "silver" || level === "gold" || level === "platinum") {
-    const dialyzer = new Deno.Command("mix", {
+    let dialyzer = new Deno.Command("mix", {
       args: ["dialyzer", "--halt-exit-status"],
       cwd: join(ROOT, "server"),
       stdout: "null",
@@ -1086,7 +1083,7 @@ async function cmdRsr(args: string[], config: Config): Promise<CommandResult> {
 
   // Tests pass
   if (level === "bronze" || level === "silver" || level === "gold" || level === "platinum") {
-    const tests = new Deno.Command("mix", {
+    let tests = new Deno.Command("mix", {
       args: ["test"],
       cwd: join(ROOT, "server"),
       stdout: "null",
@@ -1098,11 +1095,11 @@ async function cmdRsr(args: string[], config: Config): Promise<CommandResult> {
 
   // CRDT verification
   if (level === "bronze" || level === "silver" || level === "gold" || level === "platinum") {
-    const crdts = ["GCounter", "PNCounter", "ORSet", "LWWRegister"];
+    let crdts = ["GCounter", "PNCounter", "ORSet", "LWWRegister"];
     let allVerified = true;
 
     for (const crdt of crdts) {
-      const verify = new Deno.Command("mix", {
+      let verify = new Deno.Command("mix", {
         args: ["run", "-e", `:ok = Laniakea.CRDT.verify(Laniakea.CRDT.${crdt})`],
         cwd: join(ROOT, "server"),
         stdout: "null",
@@ -1117,7 +1114,7 @@ async function cmdRsr(args: string[], config: Config): Promise<CommandResult> {
 
   // Format check
   if (level === "silver" || level === "gold" || level === "platinum") {
-    const format = new Deno.Command("mix", {
+    let format = new Deno.Command("mix", {
       args: ["format", "--check-formatted"],
       cwd: join(ROOT, "server"),
       stdout: "null",
@@ -1129,7 +1126,7 @@ async function cmdRsr(args: string[], config: Config): Promise<CommandResult> {
 
   // Lint check
   if (level === "gold" || level === "platinum") {
-    const credo = new Deno.Command("mix", {
+    let credo = new Deno.Command("mix", {
       args: ["credo", "--strict"],
       cwd: join(ROOT, "server"),
       stdout: "null",
@@ -1146,14 +1143,14 @@ async function cmdRsr(args: string[], config: Config): Promise<CommandResult> {
   }
 
   // Display results
-  const passed = results.filter(r => r.status === "pass").length;
-  const failed = results.filter(r => r.status === "fail").length;
-  const manual = results.filter(r => r.status === "manual").length;
+  let passed = results.filter(r => r.status === "pass").length;
+  let failed = results.filter(r => r.status === "fail").length;
+  let manual = results.filter(r => r.status === "manual").length;
 
   if (config.output.format === "plain") {
     for (const r of results) {
-      const symbol = r.status === "pass" ? "✓" : r.status === "fail" ? "✗" : "○";
-      const color = r.status === "pass" ? "green" : r.status === "fail" ? "red" : "yellow";
+      let symbol = r.status === "pass" ? "✓" : r.status === "fail" ? "✗" : "○";
+      let color = r.status === "pass" ? "green" : r.status === "fail" ? "red" : "yellow";
       console.log(`${colorize(symbol, color, config.output.color)} ${r.requirement}`);
     }
 
@@ -1166,27 +1163,27 @@ async function cmdRsr(args: string[], config: Config): Promise<CommandResult> {
   return { success: failed === 0, data: results, exitCode: failed === 0 ? 0 : 1 };
 }
 
-async function cmdGen(args: string[], config: Config): Promise<CommandResult> {
-  const type = args[0];
+async fn cmdGen(args: string[], config: Config): CommandResult {
+  let type = args[0];
 
   switch (type) {
     case "secret": {
-      const bytes = new Uint8Array(64);
+      let bytes = new Uint8Array(64);
       crypto.getRandomValues(bytes);
-      const secret = Array.from(bytes).map(b => b.toString(16).padStart(2, "0")).join("");
+      let secret = Array.from(bytes).map(b => b.toString(16).padStart(2, "0")).join("");
       console.log(secret);
       return { success: true, data: secret, exitCode: 0 };
     }
 
     case "uuid": {
-      const uuid = crypto.randomUUID();
+      let uuid = crypto.randomUUID();
       console.log(uuid);
       return { success: true, data: uuid, exitCode: 0 };
     }
 
     case "node-id": {
-      const uuid = crypto.randomUUID();
-      const nodeId = `node_${uuid.replace(/-/g, "").substring(0, 16)}`;
+      let uuid = crypto.randomUUID();
+      let nodeId = `node_${uuid.replace(/-/g, "").substring(0, 16)}`;
       console.log(nodeId);
       return { success: true, data: nodeId, exitCode: 0 };
     }
@@ -1197,19 +1194,19 @@ async function cmdGen(args: string[], config: Config): Promise<CommandResult> {
   }
 }
 
-async function cmdStats(_args: string[], config: Config): Promise<CommandResult> {
+async fn cmdStats(_args: string[], config: Config): CommandResult {
   const stats: Record<string, unknown> = {};
 
   // Count Elixir lines
   try {
-    const p = new Deno.Command("find", {
+    let p = new Deno.Command("find", {
       args: [join(ROOT, "server/lib"), "-name", "*.ex", "-exec", "wc", "-l", "{}", "+"],
       stdout: "piped",
       stderr: "null",
     });
     const { stdout } = await p.output();
-    const output = new TextDecoder().decode(stdout);
-    const match = output.match(/(\d+)\s+total/);
+    let output = new TextDecoder().decode(stdout);
+    let match = output.match(/(\d+)\s+total/);
     stats.elixirLines = match ? parseInt(match[1]) : 0;
   } catch {
     stats.elixirLines = 0;
@@ -1217,14 +1214,14 @@ async function cmdStats(_args: string[], config: Config): Promise<CommandResult>
 
   // Count ReScript lines
   try {
-    const p = new Deno.Command("find", {
+    let p = new Deno.Command("find", {
       args: [join(ROOT, "client/src"), "-name", "*.res", "-exec", "wc", "-l", "{}", "+"],
       stdout: "piped",
       stderr: "null",
     });
     const { stdout } = await p.output();
-    const output = new TextDecoder().decode(stdout);
-    const match = output.match(/(\d+)\s+total/);
+    let output = new TextDecoder().decode(stdout);
+    let match = output.match(/(\d+)\s+total/);
     stats.rescriptLines = match ? parseInt(match[1]) : 0;
   } catch {
     stats.rescriptLines = 0;
@@ -1236,13 +1233,13 @@ async function cmdStats(_args: string[], config: Config): Promise<CommandResult>
 
   // Count tests
   try {
-    const p = new Deno.Command("find", {
+    let p = new Deno.Command("find", {
       args: [join(ROOT, "server/test"), "-name", "*_test.exs"],
       stdout: "piped",
       stderr: "null",
     });
     const { stdout } = await p.output();
-    const files = new TextDecoder().decode(stdout).trim().split("\n").filter(f => f);
+    let files = new TextDecoder().decode(stdout).trim().split("\n").filter(f => f);
     stats.testFileCount = files.length;
   } catch {
     stats.testFileCount = 0;
@@ -1250,7 +1247,7 @@ async function cmdStats(_args: string[], config: Config): Promise<CommandResult>
 
   // Count dependencies
   try {
-    const mixLock = await Deno.readTextFile(join(ROOT, "server/mix.lock"));
+    let mixLock = await Deno.readTextFile(join(ROOT, "server/mix.lock"));
     stats.elixirDeps = (mixLock.match(/"[^"]+": \{/g) || []).length;
   } catch {
     stats.elixirDeps = 0;
@@ -1266,8 +1263,8 @@ async function cmdStats(_args: string[], config: Config): Promise<CommandResult>
 // Help
 // ============================================================================
 
-function printHelp(useColor: boolean): void {
-  const c = (text: string, color: keyof typeof colors) => colorize(text, color, useColor);
+fn printHelp(useColor: boolean): void {
+  let c = (text: string, color: keyof typeof colors) => colorize(text, color, useColor);
 
   console.log(`
 ${c("Laniakea CLI", "bold")} v${VERSION}
@@ -1366,8 +1363,8 @@ ${c("MORE INFO:", "yellow")}
 // Main
 // ============================================================================
 
-async function main(): Promise<number> {
-  const args = parse(Deno.args, {
+async fn main(): number {
+  let args = parse(Deno.args, {
     boolean: ["help", "version", "verbose", "quiet", "color", "no-color"],
     string: ["config", "format", "host", "secret", "db-host", "db-name", "db-user", "db-password"],
     default: {
@@ -1388,7 +1385,7 @@ async function main(): Promise<number> {
     return 0;
   }
 
-  const useColor = args["no-color"] ? false : args.color ?? Deno.isatty(Deno.stdout.rid);
+  let useColor = args["no-color"] ? false : args.color ?? Deno.isatty(Deno.stdout.rid);
 
   if (args.help || args._.length === 0) {
     printHelp(useColor);
@@ -1396,12 +1393,12 @@ async function main(): Promise<number> {
   }
 
   // Load and merge config
-  const fileConfig = await loadConfig(args.config);
-  const config = mergeConfig(fileConfig, args as Record<string, unknown>);
+  let fileConfig = await loadConfig(args.config);
+  let config = mergeConfig(fileConfig, args as Record<string, unknown>);
 
   // Route command
-  const command = String(args._[0]);
-  const commandArgs = args._.slice(1).map(String);
+  let command = String(args._[0]);
+  let commandArgs = args._.slice(1).map(String);
 
   let result: CommandResult;
 
@@ -1457,4 +1454,3 @@ async function main(): Promise<number> {
 // Run
 Deno.exit(await main());
 
-==================================== */
