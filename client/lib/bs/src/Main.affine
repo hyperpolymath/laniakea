@@ -1,7 +1,124 @@
 // SPDX-License-Identifier: MPL-2.0
-// SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell
-// Ported via Harvard Engine bulk-processor
+// Ported via Harvard Engine (Semantic pass)
 
 module Main;
 
-// TODO: Complete semantic implementation
+// SPDX-License-Identifier: MPL-2.0 OR Apache-2.0
+// Copyright (c) 2024 Laniakea Contributors
+
+/**
+ * Laniakea Client Entry Point
+ *
+ * Provides the main API for browser applications.
+ */
+
+module CRDT = {
+  module GCounter = GCounter
+  module PNCounter = PNCounter
+  module ORSet = ORSet
+  module LWWRegister = LWWRegister
+}
+
+module Adapters = {
+  module Capabilities = Capabilities
+}
+
+module Transport = {
+  module Channel = Channel
+}
+
+// Re-export common functions
+fn probeCapabilities = Capabilities.probe
+fn makeGCounter = GCounter.make
+fn makePNCounter = PNCounter.make
+fn makeORSet = ORSet.make
+
+// Generate a unique node ID
+fn generateNodeId = (): string => {
+  fn timestamp = Js.Date.now()->Belt.Float.toInt
+  fn random = Js.Math.random_int(0, 999999)
+  `node_${timestamp->Belt.Int.toString}_${random->Belt.Int.toString}`
+}
+
+// Initialize the client
+struct client { {
+  nodeId: string,
+  capabilities: Capabilities.t,
+  connection: Channel.t,
+}
+
+fn init = (~serverUrl: string): client => {
+  fn nodeId = generateNodeId()
+  fn capabilities = Capabilities.probe()
+
+  Js.Console.log("=== Laniakea Client ===")
+  Js.Console.log2("Node ID:", nodeId)
+  Capabilities.log(capabilities)
+
+  fn config: Channel.config = {
+    url: serverUrl,
+    nodeId,
+    capabilities,
+  }
+
+  fn connection = Channel.make(config)
+  Channel.connect(connection, serverUrl ++ "/socket")
+
+  {
+    nodeId,
+    capabilities,
+    connection,
+  }
+}
+
+// Demo: Counter application
+module CounterDemo = {
+  struct state { {
+    mutable counter: GCounter.t,
+    mutable client: option<client>,
+  }
+
+  fn state: state = {
+    counter: GCounter.make(),
+    client: None,
+  }
+
+  fn start = (serverUrl: string): unit => {
+    fn client = init(~serverUrl)
+    state.client = Some(client)
+
+    // Join counter channel
+    Channel.joinCrdt(
+      client.connection,
+      "demo:counter",
+      ~onState=response => {
+        Js.Console.log2("Initial state:", response)
+        // Parse and set state
+      },
+      ~onUpdate=response => {
+        Js.Console.log2("State updated:", response)
+        // Merge with local state
+      },
+    )
+  }
+
+  fn increment = (): unit => {
+    switch state.client {
+    | None => Js.Console.error("Not initialized")
+    | Some(client) =>
+      // Local update (optimistic)
+      state.counter = GCounter.increment(state.counter, client.nodeId)
+      Js.Console.log2("Local value:", GCounter.value(state.counter))
+
+      // Sync to server
+      Channel.increment(client.connection)
+    }
+  }
+
+  fn getValue = (): int => GCounter.value(state.counter)
+}
+
+// Entry point for browser
+Js.Console.log("Laniakea Client loaded")
+Js.Console.log("Use Laniakea.init(~serverUrl) to connect")
+
