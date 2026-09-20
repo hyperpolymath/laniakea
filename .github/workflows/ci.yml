@@ -145,12 +145,6 @@ jobs:
       - name: Run tests
         run: cd server && mix test --cover
 
-      - name: Upload coverage
-        uses: codecov/codecov-action@v7.0.0
-        with:
-          files: server/cover/excoveralls.json
-          flags: server
-
   # ============================================================================
   # Client Tests
   # ============================================================================
