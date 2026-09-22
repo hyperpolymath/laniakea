@@ -63,6 +63,12 @@ defmodule Laniakea.CRDT.PropertyTest do
   # GCounter semilattice laws
   # ---------------------------------------------------------------------------
 
+  test "all CRDT implementations are structurally idempotent" do
+    for module <- [GCounter, PNCounter, ORSet, LWWRegister] do
+      assert :ok = Laniakea.CRDT.verify(module)
+    end
+  end
+
   describe "GCounter: commutativity" do
     property "merge(a, b) == merge(b, a) in value" do
       check all ops_a <- StreamData.list_of(StreamData.tuple({node_id_gen(), amount_gen()}), min_length: 0, max_length: 10),

@@ -89,6 +89,14 @@ defmodule Laniakea.CRDT.PNCounter do
 
   @doc """
   Increments the counter by a specific amount.
+
+  This is a compatibility alias for `increment_by/3`.
+  """
+  @spec increment(t(), node_id(), non_neg_integer()) :: t()
+  def increment(%PNCounter{} = counter, node_id, amount), do: increment_by(counter, node_id, amount)
+
+  @doc """
+  Increments the counter by a specific amount.
   """
   @spec increment_by(t(), node_id(), non_neg_integer()) :: t()
   def increment_by(%PNCounter{positive: pos, version: v} = counter, node_id, amount) do
@@ -119,6 +127,14 @@ defmodule Laniakea.CRDT.PNCounter do
         version: v + 1
     }
   end
+
+  @doc """
+  Decrements the counter by a specific amount.
+
+  This is a compatibility alias for `decrement_by/3`.
+  """
+  @spec decrement(t(), node_id(), non_neg_integer()) :: t()
+  def decrement(%PNCounter{} = counter, node_id, amount), do: decrement_by(counter, node_id, amount)
 
   @doc """
   Decrements the counter by a specific amount.
@@ -185,7 +201,7 @@ defmodule Laniakea.CRDT.PNCounter do
     %PNCounter{
       positive: GCounter.merge(a.positive, b.positive),
       negative: GCounter.merge(a.negative, b.negative),
-      version: max(a.version, b.version) + 1
+      version: max(a.version, b.version)
     }
   end
 
@@ -211,7 +227,13 @@ defmodule Laniakea.CRDT.PNCounter do
   # ============================================================================
 
   @impl Laniakea.CRDT
-  @spec to_map(t()) :: map()
+  @spec to_map(t()) :: %{
+          required(:type) => binary(),
+          required(:positive) => %{node_id() => non_neg_integer()},
+          required(:negative) => %{node_id() => non_neg_integer()},
+          required(:version) => non_neg_integer(),
+          required(:value) => integer()
+        }
   def to_map(%PNCounter{positive: pos, negative: neg, version: v} = counter) do
     %{
       type: "pn_counter",
@@ -219,6 +241,23 @@ defmodule Laniakea.CRDT.PNCounter do
       negative: neg.counts,
       version: v,
       value: value(counter)
+    }
+  end
+
+  @doc """
+  Converts the counter to its string-keyed wire representation.
+  """
+  @spec to_wire(t()) :: %{
+          required(String.t()) =>
+            String.t() | integer() | %{node_id() => non_neg_integer()}
+        }
+  def to_wire(%PNCounter{positive: pos, negative: neg, version: version} = counter) do
+    %{
+      "type" => "pn_counter",
+      "positive" => pos.counts,
+      "negative" => neg.counts,
+      "version" => version,
+      "value" => value(counter)
     }
   end
 

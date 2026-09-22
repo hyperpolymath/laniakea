@@ -61,7 +61,7 @@ function merge(a, b) {
   return {
     positive: GCounter.merge(a.positive, b.positive),
     negative: GCounter.merge(a.negative, b.negative),
-    version: Math.max(a.version, b.version) + 1 | 0
+    version: Math.max(a.version, b.version)
   };
 }
 

@@ -46,12 +46,14 @@ defmodule Laniakea.CRDT.ORSet do
 
   @type node_id :: String.t()
   @type tag :: %{node: node_id(), ts: integer()}
+  @type tag_map :: %{any() => MapSet.t(tag())}
   @type t :: %ORSet{
-          elements: %{any() => MapSet.t(tag())},
+          elements: tag_map(),
+          tombstones: tag_map(),
           version: non_neg_integer()
         }
 
-  defstruct elements: %{}, version: 0
+  defstruct elements: %{}, tombstones: %{}, version: 0
 
   # ============================================================================
   # Constructor
@@ -60,7 +62,7 @@ defmodule Laniakea.CRDT.ORSet do
   @doc """
   Creates a new, empty OR-Set.
   """
-  @spec new() :: t()
+  @spec new() :: %ORSet{elements: %{}, tombstones: %{}, version: 0}
   def new, do: %ORSet{}
 
   # ============================================================================
@@ -105,9 +107,12 @@ defmodule Laniakea.CRDT.ORSet do
       false
   """
   @spec remove(t(), any()) :: t()
-  def remove(%ORSet{elements: elements, version: v} = _set, element) do
+  def remove(%ORSet{elements: elements, tombstones: tombstones, version: v} = _set, element) do
+    observed_tags = Map.get(elements, element, MapSet.new())
+
     %ORSet{
-      elements: Map.delete(elements, element),
+      elements: elements,
+      tombstones: Map.update(tombstones, element, observed_tags, &MapSet.union(&1, observed_tags)),
       version: v + 1
     }
   end
@@ -121,12 +126,13 @@ defmodule Laniakea.CRDT.ORSet do
   """
   @impl Laniakea.CRDT
   @spec value(t()) :: list()
-  def value(%ORSet{elements: elements}) do
+  def value(%ORSet{elements: elements, tombstones: tombstones}) do
     elements
     |> Map.keys()
     |> Enum.filter(fn elem ->
       tags = Map.get(elements, elem, MapSet.new())
-      MapSet.size(tags) > 0
+      live_tags = MapSet.difference(tags, Map.get(tombstones, elem, MapSet.new()))
+      MapSet.size(live_tags) > 0
     end)
   end
 
@@ -148,12 +154,19 @@ defmodule Laniakea.CRDT.ORSet do
       false
   """
   @spec contains?(t(), any()) :: boolean()
-  def contains?(%ORSet{elements: elements}, element) do
-    case Map.get(elements, element) do
-      nil -> false
-      tags -> MapSet.size(tags) > 0
-    end
+  def contains?(%ORSet{elements: elements, tombstones: tombstones}, element) do
+    elements
+    |> Map.get(element, MapSet.new())
+    |> MapSet.difference(Map.get(tombstones, element, MapSet.new()))
+    |> MapSet.size()
+    |> Kernel.>(0)
   end
+
+  @doc """
+  Compatibility alias for `contains?/2`.
+  """
+  @spec member?(t(), any()) :: boolean()
+  def member?(%ORSet{} = set, element), do: contains?(set, element)
 
   @doc """
   Returns the number of elements in the set.
@@ -176,28 +189,10 @@ defmodule Laniakea.CRDT.ORSet do
   @impl Laniakea.CRDT
   @spec merge(t(), t()) :: t()
   def merge(%ORSet{} = a, %ORSet{} = b) do
-    all_elements =
-      MapSet.union(
-        MapSet.new(Map.keys(a.elements)),
-        MapSet.new(Map.keys(b.elements))
-      )
-
-    merged_elements =
-      Enum.reduce(all_elements, %{}, fn element, acc ->
-        tags_a = Map.get(a.elements, element, MapSet.new())
-        tags_b = Map.get(b.elements, element, MapSet.new())
-        merged_tags = MapSet.union(tags_a, tags_b)
-
-        if MapSet.size(merged_tags) > 0 do
-          Map.put(acc, element, merged_tags)
-        else
-          acc
-        end
-      end)
-
     %ORSet{
-      elements: merged_elements,
-      version: max(a.version, b.version) + 1
+      elements: merge_tag_maps(a.elements, b.elements),
+      tombstones: merge_tag_maps(a.tombstones, b.tombstones),
+      version: max(a.version, b.version)
     }
   end
 
@@ -211,20 +206,11 @@ defmodule Laniakea.CRDT.ORSet do
   @impl Laniakea.CRDT
   @spec delta(t(), t()) :: t()
   def delta(%ORSet{} = older, %ORSet{} = newer) do
-    # Find elements that are new or have new tags
-    delta_elements =
-      Enum.reduce(newer.elements, %{}, fn {element, new_tags}, acc ->
-        old_tags = Map.get(older.elements, element, MapSet.new())
-        added_tags = MapSet.difference(new_tags, old_tags)
-
-        if MapSet.size(added_tags) > 0 do
-          Map.put(acc, element, added_tags)
-        else
-          acc
-        end
-      end)
-
-    %ORSet{elements: delta_elements, version: newer.version}
+    %ORSet{
+      elements: tag_map_delta(older.elements, newer.elements),
+      tombstones: tag_map_delta(older.tombstones, newer.tombstones),
+      version: newer.version
+    }
   end
 
   # ============================================================================
@@ -233,42 +219,78 @@ defmodule Laniakea.CRDT.ORSet do
 
   @impl Laniakea.CRDT
   @spec to_map(t()) :: map()
-  def to_map(%ORSet{elements: elements, version: v} = set) do
-    serialized_elements =
-      Map.new(elements, fn {element, tags} ->
-        serialized_tags =
-          tags
-          |> MapSet.to_list()
-          |> Enum.map(fn %{node: n, ts: t} -> %{"node" => n, "ts" => t} end)
-
-        {element, serialized_tags}
-      end)
-
+  def to_map(%ORSet{elements: elements, tombstones: tombstones, version: v} = set) do
     %{
       type: "or_set",
-      elements: serialized_elements,
+      elements: serialize_tag_map(elements),
+      tombstones: serialize_tag_map(tombstones),
       version: v,
       value: value(set)
+    }
+  end
+
+  @doc """
+  Converts the set to its string-keyed wire representation.
+  """
+  @spec to_wire(t()) :: map()
+  def to_wire(%ORSet{elements: elements, tombstones: tombstones, version: version} = set) do
+    %{
+      "type" => "or_set",
+      "elements" => serialize_tag_map(elements),
+      "tombstones" => serialize_tag_map(tombstones),
+      "version" => version,
+      "value" => value(set)
     }
   end
 
   @impl Laniakea.CRDT
   @spec from_wire(map()) :: t()
   def from_wire(%{"elements" => elements} = data) do
-    parsed_elements =
-      Map.new(elements, fn {element, tags} ->
-        parsed_tags =
-          tags
-          |> Enum.map(fn %{"node" => n, "ts" => t} -> %{node: n, ts: t} end)
-          |> MapSet.new()
-
-        {element, parsed_tags}
-      end)
-
     %ORSet{
-      elements: parsed_elements,
+      elements: deserialize_tag_map(elements),
+      tombstones: data |> Map.get("tombstones", %{}) |> deserialize_tag_map(),
       version: Map.get(data, "version", 0)
     }
+  end
+
+  defp merge_tag_maps(left, right) do
+    Map.merge(left, right, fn _element, left_tags, right_tags ->
+      MapSet.union(left_tags, right_tags)
+    end)
+  end
+
+  defp serialize_tag_map(tag_map) do
+    Map.new(tag_map, fn {element, tags} ->
+      serialized_tags =
+        tags
+        |> MapSet.to_list()
+        |> Enum.map(fn %{node: node, ts: timestamp} -> %{"node" => node, "ts" => timestamp} end)
+
+      {element, serialized_tags}
+    end)
+  end
+
+  defp deserialize_tag_map(tag_map) do
+    Map.new(tag_map, fn {element, tags} ->
+      parsed_tags =
+        tags
+        |> Enum.map(fn %{"node" => node, "ts" => timestamp} -> %{node: node, ts: timestamp} end)
+        |> MapSet.new()
+
+      {element, parsed_tags}
+    end)
+  end
+
+  defp tag_map_delta(older, newer) do
+    Enum.reduce(newer, %{}, fn {element, newer_tags}, acc ->
+      added_tags = MapSet.difference(newer_tags, Map.get(older, element, MapSet.new()))
+
+      if MapSet.size(added_tags) > 0 do
+        Map.put(acc, element, added_tags)
+      else
+        acc
+      end
+    end)
   end
 
   defimpl Inspect do

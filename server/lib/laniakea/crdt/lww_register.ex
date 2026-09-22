@@ -31,7 +31,7 @@ defmodule Laniakea.CRDT.LWWRegister do
       iex> LWWRegister.value(reg)
       "hello"
 
-      iex> reg = LWWRegister.set(reg, "world", "node1")
+      iex> reg = LWWRegister.new() |> LWWRegister.set("world", "node1")
       iex> LWWRegister.value(reg)
       "world"
   """
@@ -57,7 +57,7 @@ defmodule Laniakea.CRDT.LWWRegister do
   @doc """
   Creates a new, empty LWW-Register.
   """
-  @spec new() :: t()
+  @spec new() :: %LWWRegister{value: nil, timestamp: 0, node_id: nil, version: 0}
   def new, do: %LWWRegister{}
 
   @doc """
@@ -164,7 +164,7 @@ defmodule Laniakea.CRDT.LWWRegister do
   @spec merge(t(), t()) :: t()
   def merge(%LWWRegister{} = a, %LWWRegister{} = b) do
     winner = compare_and_select(a, b)
-    %LWWRegister{winner | version: max(a.version, b.version) + 1}
+    %LWWRegister{winner | version: max(a.version, b.version)}
   end
 
   defp compare_and_select(a, b) do
@@ -210,6 +210,20 @@ defmodule Laniakea.CRDT.LWWRegister do
       timestamp: ts,
       node_id: n,
       version: ver
+    }
+  end
+
+  @doc """
+  Converts the register to its string-keyed wire representation.
+  """
+  @spec to_wire(t()) :: map()
+  def to_wire(%LWWRegister{value: value, timestamp: timestamp, node_id: node_id, version: version}) do
+    %{
+      "type" => "lww_register",
+      "value" => value,
+      "timestamp" => timestamp,
+      "node_id" => node_id,
+      "version" => version
     }
   end
 

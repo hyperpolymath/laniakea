@@ -83,7 +83,7 @@ fn merge = (a: t, b: t): t => {
 
   {
     counts: mergedCounts,
-    version: Js.Math.max_int(a.version, b.version) + 1,
+    version: Js.Math.max_int(a.version, b.version),
   }
 }
 
@@ -154,4 +154,3 @@ fn fromWire = (wire: wireFormat): t => {
     version: wire.version,
   }
 }
-

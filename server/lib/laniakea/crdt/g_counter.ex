@@ -69,7 +69,7 @@ defmodule Laniakea.CRDT.GCounter do
       iex> GCounter.new()
       %GCounter{counts: %{}, version: 0}
   """
-  @spec new() :: t()
+  @spec new() :: %GCounter{counts: %{}, version: 0}
   def new, do: %GCounter{}
 
   @doc """
@@ -109,6 +109,21 @@ defmodule Laniakea.CRDT.GCounter do
       counts: Map.put(counts, node_id, current + 1),
       version: v + 1
     }
+  end
+
+  @doc """
+  Increments the counter for the given node by a specific amount.
+
+  This is a compatibility alias for `increment_by/3`.
+  """
+  @spec increment(t(), node_id(), non_neg_integer()) :: t()
+  def increment(%GCounter{} = counter, node_id, amount)
+      when is_binary(node_id) and is_integer(amount) and amount >= 0 do
+    increment_by(counter, node_id, amount)
+  end
+
+  def increment(%GCounter{}, _node_id, amount) do
+    raise ArgumentError, "increment amount must be a non-negative integer, got: #{inspect(amount)}"
   end
 
   @doc """
@@ -220,7 +235,7 @@ defmodule Laniakea.CRDT.GCounter do
 
     %GCounter{
       counts: merged_counts,
-      version: max(a.version, b.version) + 1
+      version: max(a.version, b.version)
     }
   end
 
@@ -264,7 +279,7 @@ defmodule Laniakea.CRDT.GCounter do
       iex> state = GCounter.from_map(%{"alice" => 3})
       iex> delta = GCounter.from_map(%{"alice" => 5, "bob" => 2})
       iex> GCounter.apply_delta(state, delta)
-      %GCounter{counts: %{"alice" => 5, "bob" => 2}, version: 1}
+      %GCounter{counts: %{"alice" => 5, "bob" => 2}, version: 0}
   """
   @spec apply_delta(t(), t()) :: t()
   def apply_delta(%GCounter{} = state, %GCounter{} = delta) do
@@ -340,13 +355,33 @@ defmodule Laniakea.CRDT.GCounter do
       %{type: "g_counter", counts: %{"node1" => 1}, version: 1, value: 1}
   """
   @impl Laniakea.CRDT
-  @spec to_map(t()) :: map()
+  @spec to_map(t()) :: %{
+          required(:type) => binary(),
+          required(:counts) => %{node_id() => non_neg_integer()},
+          required(:version) => non_neg_integer(),
+          required(:value) => non_neg_integer()
+        }
   def to_map(%GCounter{counts: counts, version: version} = counter) do
     %{
       type: "g_counter",
       counts: counts,
       version: version,
       value: value(counter)
+    }
+  end
+
+  @doc """
+  Converts the counter to its string-keyed wire representation.
+  """
+  @spec to_wire(t()) :: %{
+          required(String.t()) => String.t() | non_neg_integer() | %{node_id() => non_neg_integer()}
+        }
+  def to_wire(%GCounter{counts: counts, version: version} = counter) do
+    %{
+      "type" => "g_counter",
+      "counts" => counts,
+      "version" => version,
+      "value" => value(counter)
     }
   end
 

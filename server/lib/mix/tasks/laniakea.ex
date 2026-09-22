@@ -87,8 +87,10 @@ defmodule Mix.Tasks.Laniakea do
         cmd_gen_node_id(config)
 
       ["status"] ->
-        Application.ensure_all_started(:laniakea)
-        cmd_status(config)
+        case Application.ensure_all_started(:laniakea) do
+          {:ok, _started} -> cmd_status(config)
+          {:error, reason} -> Mix.raise("Unable to start Laniakea: #{inspect(reason)}")
+        end
 
       ["rsr" | rest] ->
         cmd_rsr(rest, config)
@@ -242,7 +244,7 @@ defmodule Mix.Tasks.Laniakea do
   end
 
   defp cmd_gen_uuid(config) do
-    uuid = UUID.uuid4()
+    uuid = uuid4()
 
     if config.format == "json" do
       format_output(%{uuid: uuid}, config)
@@ -252,7 +254,7 @@ defmodule Mix.Tasks.Laniakea do
   end
 
   defp cmd_gen_node_id(config) do
-    uuid = UUID.uuid4() |> String.replace("-", "") |> String.slice(0, 16)
+    uuid = uuid4() |> String.replace("-", "") |> String.slice(0, 16)
     node_id = "node_#{uuid}"
 
     if config.format == "json" do
@@ -260,6 +262,28 @@ defmodule Mix.Tasks.Laniakea do
     else
       Mix.shell().info(node_id)
     end
+  end
+
+  defp uuid4 do
+    <<first::32, second::16, third::16, fourth::16, fifth::48>> = :crypto.strong_rand_bytes(16)
+
+    third = Bitwise.bor(Bitwise.band(third, 0x0FFF), 0x4000)
+    fourth = Bitwise.bor(Bitwise.band(fourth, 0x3FFF), 0x8000)
+
+    [
+      hex(first, 8),
+      hex(second, 4),
+      hex(third, 4),
+      hex(fourth, 4),
+      hex(fifth, 12)
+    ]
+    |> Enum.join("-")
+  end
+
+  defp hex(value, width) do
+    value
+    |> Integer.to_string(16)
+    |> String.pad_leading(width, "0")
   end
 
   # Status Command

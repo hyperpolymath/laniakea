@@ -55,7 +55,7 @@ function merge(a, b) {
   });
   return {
     counts: mergedCounts,
-    version: Math.max(a.version, b.version) + 1 | 0
+    version: Math.max(a.version, b.version)
   };
 }
 
