@@ -67,7 +67,7 @@ function merge(a, b) {
     value: winner.value,
     timestamp: winner.timestamp,
     nodeId: winner.nodeId,
-    version: Math.max(a.version, b.version) + 1 | 0
+    version: Math.max(a.version, b.version)
   };
 }
 

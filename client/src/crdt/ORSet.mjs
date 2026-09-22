@@ -90,7 +90,7 @@ function merge(a, b) {
   });
   return {
     elements: mergedElements,
-    version: Math.max(a.version, b.version) + 1 | 0
+    version: Math.max(a.version, b.version)
   };
 }
 

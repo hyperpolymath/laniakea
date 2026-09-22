@@ -85,7 +85,7 @@ fn merge = (a: t<'a>, b: t<'a>): t<'a> => {
 
   {
     ...winner,
-    version: Js.Math.max_int(a.version, b.version) + 1,
+    version: Js.Math.max_int(a.version, b.version),
   }
 }
 
@@ -112,4 +112,3 @@ fn fromWire = (wire: wireFormat<'a>): t<'a> => {
   nodeId: wire.nodeId->Js.Nullable.toOption,
   version: wire.version,
 }
-

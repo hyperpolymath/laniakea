@@ -79,7 +79,7 @@ fn merge = (a: t, b: t): t => {
   {
     positive: GCounter.merge(a.positive, b.positive),
     negative: GCounter.merge(a.negative, b.negative),
-    version: Js.Math.max_int(a.version, b.version) + 1,
+    version: Js.Math.max_int(a.version, b.version),
   }
 }
 
@@ -132,4 +132,3 @@ fn fromWire = (wire: wireFormat): t => {
     version: wire.version,
   }
 }
-

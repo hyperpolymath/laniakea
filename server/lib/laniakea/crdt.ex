@@ -47,6 +47,12 @@ defmodule Laniakea.CRDT do
 
   @type crdt :: struct()
   @type node_id :: String.t()
+  @type supported_crdt_module ::
+          Laniakea.CRDT.GCounter
+          | Laniakea.CRDT.PNCounter
+          | Laniakea.CRDT.ORSet
+          | Laniakea.CRDT.LWWRegister
+  @type verification_error :: :commutativity_failed | :associativity_failed | :idempotence_failed
 
   @doc """
   Returns the current value of the CRDT.
@@ -135,7 +141,8 @@ defmodule Laniakea.CRDT do
       iex> Laniakea.CRDT.verify(Laniakea.CRDT.GCounter)
       :ok
   """
-  @spec verify(module()) :: :ok | {:error, term()}
+  @spec verify(supported_crdt_module()) ::
+          :ok | {:error, {verification_error(), supported_crdt_module()}}
   def verify(module) do
     with :ok <- verify_commutativity(module),
          :ok <- verify_associativity(module),

@@ -108,8 +108,8 @@ defmodule Laniakea.CRDT.GCounterTest do
       counter = GCounter.new() |> GCounter.increment("node1", 5)
       wire = GCounter.to_wire(counter)
 
-      assert wire.type == "g_counter"
-      assert wire.counts["node1"] == 5
+      assert wire["type"] == "g_counter"
+      assert wire["counts"]["node1"] == 5
     end
   end
 

@@ -111,7 +111,7 @@ fn merge = (a: t, b: t): t => {
 
   {
     elements: mergedElements,
-    version: Js.Math.max_int(a.version, b.version) + 1,
+    version: Js.Math.max_int(a.version, b.version),
   }
 }
 
@@ -141,4 +141,3 @@ fn toWire = (set: t): wireFormat => {
     value: elements(set),
   }
 }
-

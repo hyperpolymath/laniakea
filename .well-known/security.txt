@@ -1,0 +1,6 @@
+Contact: mailto:security@laniakea.dev
+Contact: https://github.com/hyperpolymath/laniakea/security/advisories/new
+Expires: 2027-09-22T00:00:00Z
+Preferred-Languages: en
+Policy: https://github.com/hyperpolymath/laniakea/blob/main/SECURITY.adoc
+Canonical: https://laniakea.dev/.well-known/security.txt

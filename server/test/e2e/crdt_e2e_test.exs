@@ -159,8 +159,12 @@ defmodule Laniakea.CRDT.E2ETest do
 
       wire = ORSet.to_map(set)
       assert is_map(wire)
-      # Re-hydrate; from_wire expects string-keyed "elements".
-      restored = ORSet.from_wire(%{"elements" => Map.get(wire, :elements, %{})})
+      # Re-hydrate using the complete string-keyed wire format, including tombstones.
+      restored =
+        ORSet.from_wire(%{
+          "elements" => Map.get(wire, :elements, %{}),
+          "tombstones" => Map.get(wire, :tombstones, %{})
+        })
 
       assert ORSet.elements(restored) == ORSet.elements(set)
     end

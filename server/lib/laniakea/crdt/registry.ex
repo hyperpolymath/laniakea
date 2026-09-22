@@ -163,7 +163,7 @@ defmodule Laniakea.CRDT.Registry do
 
   def handle_call({:put, key, crdt}, _from, state) do
     new_state = put_in(state.crdts[key], crdt)
-    broadcast_update(key, crdt, state.subscribers)
+    _ = broadcast_update(key, crdt, state.subscribers)
     {:reply, :ok, new_state}
   end
 
@@ -175,7 +175,7 @@ defmodule Laniakea.CRDT.Registry do
       current ->
         updated = fun.(current)
         new_state = put_in(state.crdts[key], updated)
-        broadcast_update(key, updated, state.subscribers)
+        _ = broadcast_update(key, updated, state.subscribers)
         {:reply, {:ok, updated}, new_state}
     end
   end
@@ -191,7 +191,7 @@ defmodule Laniakea.CRDT.Registry do
       end
 
     new_state = put_in(state.crdts[key], merged)
-    broadcast_update(key, merged, state.subscribers)
+    _ = broadcast_update(key, merged, state.subscribers)
     {:reply, {:ok, merged}, new_state}
   end
 

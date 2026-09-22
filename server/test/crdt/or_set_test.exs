@@ -10,7 +10,7 @@ defmodule Laniakea.CRDT.ORSetTest do
   describe "new/0" do
     test "creates an empty set" do
       set = ORSet.new()
-      assert ORSet.elements(set) == MapSet.new()
+      assert ORSet.elements(set) == []
     end
   end
 
@@ -28,7 +28,7 @@ defmodule Laniakea.CRDT.ORSetTest do
         |> ORSet.add("apple", "node2")
 
       assert ORSet.member?(set, "apple")
-      assert MapSet.size(ORSet.elements(set)) == 1
+      assert length(ORSet.elements(set)) == 1
     end
   end
 
@@ -52,7 +52,7 @@ defmodule Laniakea.CRDT.ORSetTest do
 
     test "removing non-existent element is no-op" do
       set = ORSet.new() |> ORSet.remove("banana")
-      assert ORSet.elements(set) == MapSet.new()
+      assert ORSet.elements(set) == []
     end
   end
 
@@ -114,14 +114,14 @@ defmodule Laniakea.CRDT.ORSetTest do
   end
 
   describe "elements/1" do
-    test "returns all elements as MapSet" do
+    test "returns all elements as a list" do
       set = ORSet.new()
         |> ORSet.add("a", "node1")
         |> ORSet.add("b", "node1")
         |> ORSet.add("c", "node1")
 
       elements = ORSet.elements(set)
-      assert MapSet.size(elements) == 3
+      assert length(elements) == 3
       assert "a" in elements
       assert "b" in elements
       assert "c" in elements
