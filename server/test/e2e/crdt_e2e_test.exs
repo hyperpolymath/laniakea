@@ -40,7 +40,12 @@ defmodule Laniakea.CRDT.E2ETest do
       assert is_map(wire)
 
       # Re-hydrate using the string-keyed wire format expected by from_wire/1.
-      restored = GCounter.from_wire(%{"counts" => Map.new(wire.counts, fn {k, v} -> {k, v} end), "version" => wire.version})
+      restored =
+        GCounter.from_wire(%{
+          "counts" => Map.new(wire.counts, fn {k, v} -> {k, v} end),
+          "version" => wire.version
+        })
+
       assert GCounter.value(restored) == GCounter.value(counter)
     end
 
@@ -103,11 +108,12 @@ defmodule Laniakea.CRDT.E2ETest do
       map = PNCounter.to_map(counter)
       assert map.type == "pn_counter"
 
-      restored = PNCounter.from_wire(%{
-        "positive" => Map.new(map.positive, fn {k, v} -> {k, v} end),
-        "negative" => Map.new(map.negative, fn {k, v} -> {k, v} end),
-        "version" => map.version
-      })
+      restored =
+        PNCounter.from_wire(%{
+          "positive" => Map.new(map.positive, fn {k, v} -> {k, v} end),
+          "negative" => Map.new(map.negative, fn {k, v} -> {k, v} end),
+          "version" => map.version
+        })
 
       assert PNCounter.value(restored) == PNCounter.value(counter)
     end
@@ -133,7 +139,8 @@ defmodule Laniakea.CRDT.E2ETest do
 
     test "concurrent add and remove — add wins for unseen removes" do
       a = ORSet.new() |> ORSet.add("item", "node1")
-      b = ORSet.new()  # node2 never saw the add
+      # node2 never saw the add
+      b = ORSet.new()
 
       merged = ORSet.merge(a, b)
       assert ORSet.member?(merged, "item")
@@ -209,11 +216,13 @@ defmodule Laniakea.CRDT.E2ETest do
       wire = LWWRegister.to_map(reg)
       assert is_map(wire)
       # Re-hydrate using the string-keyed wire format.
-      restored = LWWRegister.from_wire(%{
-        "value"     => wire.value,
-        "timestamp" => wire.timestamp,
-        "node_id"   => wire.node_id
-      })
+      restored =
+        LWWRegister.from_wire(%{
+          "value" => wire.value,
+          "timestamp" => wire.timestamp,
+          "node_id" => wire.node_id
+        })
+
       assert LWWRegister.value(restored) == "persist_me"
     end
   end

@@ -1,6 +1,4 @@
-# This workflow is managed by gh actions-lock.
 # SPDX-License-Identifier: MPL-2.0
-# This workflow is managed by gh actions-lock.
 # This workflow is managed by gh actions-lock.
 # Prevention workflow - validates all workflows have proper security config
 name: Workflow Security Linter
@@ -26,7 +24,13 @@ jobs:
           errors=0
           for f in .github/workflows/*.yml .github/workflows/*.yaml; do
             [ -f "$f" ] || continue
-            if ! head -1 "$f" | grep -q "SPDX-License-Identifier"; then
+            # Scan the leading comment block, not line 1 only (REUSE allows the
+            # identifier anywhere in that block). A line-1 test fights
+            # `gh actions-lock`, which inserts its banner at line 1 whenever it
+            # refreshes a lockfile, so every lock refresh re-failed this gate.
+            # Mirrors standards governance-reusable.yml (2026-08-07 note).
+            if ! awk '/^---[[:space:]]*$/ { next } /^#/ { print; next } { exit }' "$f" \
+                 | grep -q "^# SPDX-License-Identifier:"; then
               echo "ERROR: $f missing SPDX header"
               errors=$((errors + 1))
             fi

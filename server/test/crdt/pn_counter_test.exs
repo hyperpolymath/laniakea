@@ -16,7 +16,8 @@ defmodule Laniakea.CRDT.PNCounterTest do
 
   describe "increment/2" do
     test "increments the counter" do
-      counter = PNCounter.new()
+      counter =
+        PNCounter.new()
         |> PNCounter.increment("node1")
         |> PNCounter.increment("node1")
 
@@ -26,7 +27,8 @@ defmodule Laniakea.CRDT.PNCounterTest do
 
   describe "decrement/2" do
     test "decrements the counter" do
-      counter = PNCounter.new()
+      counter =
+        PNCounter.new()
         |> PNCounter.increment("node1", 5)
         |> PNCounter.decrement("node1", 3)
 
@@ -34,7 +36,8 @@ defmodule Laniakea.CRDT.PNCounterTest do
     end
 
     test "allows negative values" do
-      counter = PNCounter.new()
+      counter =
+        PNCounter.new()
         |> PNCounter.decrement("node1", 5)
 
       assert PNCounter.value(counter) == -5
@@ -43,16 +46,19 @@ defmodule Laniakea.CRDT.PNCounterTest do
 
   describe "merge/2" do
     test "merges positive and negative counters" do
-      a = PNCounter.new()
+      a =
+        PNCounter.new()
         |> PNCounter.increment("node1", 10)
         |> PNCounter.decrement("node1", 3)
 
-      b = PNCounter.new()
+      b =
+        PNCounter.new()
         |> PNCounter.increment("node2", 5)
         |> PNCounter.decrement("node2", 2)
 
       merged = PNCounter.merge(a, b)
-      assert PNCounter.value(merged) == 10  # (10-3) + (5-2)
+      # (10-3) + (5-2)
+      assert PNCounter.value(merged) == 10
     end
 
     test "is commutative" do
@@ -77,7 +83,8 @@ defmodule Laniakea.CRDT.PNCounterTest do
     end
 
     test "is idempotent" do
-      a = PNCounter.new()
+      a =
+        PNCounter.new()
         |> PNCounter.increment("a", 5)
         |> PNCounter.decrement("a", 2)
 
@@ -87,7 +94,8 @@ defmodule Laniakea.CRDT.PNCounterTest do
 
   describe "to_wire/1 and from_wire/1" do
     test "round-trips correctly" do
-      counter = PNCounter.new()
+      counter =
+        PNCounter.new()
         |> PNCounter.increment("node1", 10)
         |> PNCounter.decrement("node1", 3)
 

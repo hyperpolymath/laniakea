@@ -9,13 +9,13 @@ updates:
       actions:
         patterns:
           - "*"
-    ignore:
-      # HOLD: github/codeql-action at v4.38.0 (SHA-pinned). v4.38.1 fails
-      # GitHub workflow-startup validation estate-wide (nexia-list#100;
-      # SHA-form re-bump bypassed versions-scoped ignores - see
-      # nexia-list#101/#104). Hold until upstream clears 4.38.1 or a
-      # newer release verifies green; revisit deliberately.
-      - dependency-name: "github/codeql-action"
+    # NOTE (2026-10-14): the former `ignore: [github/codeql-action]` HOLD is
+    # removed. It was versions-scoped, so a SHA-form re-bump bypassed it and
+    # produced PR #98 anyway (the nexia-list#101/#104 failure mode), while
+    # giving a false sense that CodeQL was held. CodeQL is now SHA-pinned to
+    # v4.38.3 (24c5418), which verified green on PR #98. Do not re-add a
+    # bare ignore without a versions constraint; a hold that Dependabot can
+    # silently bypass is worse than no hold.
 
   - package-ecosystem: "mix"
     directory: "/"

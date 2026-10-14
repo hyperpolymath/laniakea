@@ -112,7 +112,8 @@ defmodule Laniakea.CRDT.ORSet do
 
     %ORSet{
       elements: elements,
-      tombstones: Map.update(tombstones, element, observed_tags, &MapSet.union(&1, observed_tags)),
+      tombstones:
+        Map.update(tombstones, element, observed_tags, &MapSet.union(&1, observed_tags)),
       version: v + 1
     }
   end

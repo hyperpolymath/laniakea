@@ -4,8 +4,7 @@
 import Config
 
 # Production endpoint configuration
-config :laniakea, LaniakeaWeb.Endpoint,
-  cache_static_manifest: "priv/static/cache_manifest.json"
+config :laniakea, LaniakeaWeb.Endpoint, cache_static_manifest: "priv/static/cache_manifest.json"
 
 # Production logger level
 config :logger, level: :info

@@ -40,20 +40,21 @@ defmodule Mix.Tasks.Laniakea do
 
   @impl Mix.Task
   def run(args) do
-    {opts, commands, _} = OptionParser.parse(args,
-      strict: [
-        format: :string,
-        verbose: :boolean,
-        quiet: :boolean,
-        help: :boolean
-      ],
-      aliases: [
-        f: :format,
-        v: :verbose,
-        q: :quiet,
-        h: :help
-      ]
-    )
+    {opts, commands, _} =
+      OptionParser.parse(args,
+        strict: [
+          format: :string,
+          verbose: :boolean,
+          quiet: :boolean,
+          help: :boolean
+        ],
+        aliases: [
+          f: :format,
+          v: :verbose,
+          q: :quiet,
+          h: :help
+        ]
+      )
 
     config = %{
       format: Keyword.get(opts, :format, "plain"),
@@ -139,42 +140,48 @@ defmodule Mix.Tasks.Laniakea do
   end
 
   defp cmd_crdt_verify(args, config) do
-    modules = case args do
-      [] -> [
-        Laniakea.CRDT.GCounter,
-        Laniakea.CRDT.PNCounter,
-        Laniakea.CRDT.ORSet,
-        Laniakea.CRDT.LWWRegister
-      ]
-      names -> Enum.map(names, &String.to_existing_atom("Elixir.Laniakea.CRDT.#{&1}"))
-    end
+    modules =
+      case args do
+        [] ->
+          [
+            Laniakea.CRDT.GCounter,
+            Laniakea.CRDT.PNCounter,
+            Laniakea.CRDT.ORSet,
+            Laniakea.CRDT.LWWRegister
+          ]
 
-    results = Enum.map(modules, fn module ->
-      name = module |> Module.split() |> List.last()
+        names ->
+          Enum.map(names, &String.to_existing_atom("Elixir.Laniakea.CRDT.#{&1}"))
+      end
 
-      result = try do
-        case Laniakea.CRDT.verify(module) do
-          :ok -> %{name: name, status: "pass"}
-          {:error, reason} -> %{name: name, status: "fail", error: inspect(reason)}
+    results =
+      Enum.map(modules, fn module ->
+        name = module |> Module.split() |> List.last()
+
+        result =
+          try do
+            case Laniakea.CRDT.verify(module) do
+              :ok -> %{name: name, status: "pass"}
+              {:error, reason} -> %{name: name, status: "fail", error: inspect(reason)}
+            end
+          rescue
+            e -> %{name: name, status: "error", error: Exception.message(e)}
+          end
+
+        unless config.quiet do
+          symbol = if result.status == "pass", do: "✓", else: "✗"
+          color = if result.status == "pass", do: :green, else: :red
+          Mix.shell().info([color, "#{symbol} #{name}", :reset])
         end
-      rescue
-        e -> %{name: name, status: "error", error: Exception.message(e)}
-      end
 
-      unless config.quiet do
-        symbol = if result.status == "pass", do: "✓", else: "✗"
-        color = if result.status == "pass", do: :green, else: :red
-        Mix.shell().info([color, "#{symbol} #{name}", :reset])
-      end
-
-      result
-    end)
+        result
+      end)
 
     if config.format != "plain" do
       format_output(results, config)
     end
 
-    if Enum.all?(results, & &1.status == "pass") do
+    if Enum.all?(results, &(&1.status == "pass")) do
       :ok
     else
       Mix.raise("CRDT verification failed")
@@ -187,44 +194,53 @@ defmodule Mix.Tasks.Laniakea do
     end
 
     benchmarks = [
-      {"GCounter.increment", fn ->
-        counter = Laniakea.CRDT.GCounter.new()
-        Enum.reduce(1..1000, counter, fn _, c ->
-          Laniakea.CRDT.GCounter.increment(c, "node1")
-        end)
-      end},
-      {"GCounter.merge", fn ->
-        a = Laniakea.CRDT.GCounter.new() |> Laniakea.CRDT.GCounter.increment("a")
-        b = Laniakea.CRDT.GCounter.new() |> Laniakea.CRDT.GCounter.increment("b")
-        Enum.reduce(1..1000, a, fn _, acc ->
-          Laniakea.CRDT.GCounter.merge(acc, b)
-        end)
-      end},
-      {"ORSet.add", fn ->
-        set = Laniakea.CRDT.ORSet.new()
-        Enum.reduce(1..1000, set, fn i, s ->
-          Laniakea.CRDT.ORSet.add(s, "element_#{i}", "node1")
-        end)
-      end},
-      {"ORSet.merge", fn ->
-        a = Laniakea.CRDT.ORSet.new() |> Laniakea.CRDT.ORSet.add("item", "a")
-        b = Laniakea.CRDT.ORSet.new() |> Laniakea.CRDT.ORSet.add("other", "b")
-        Enum.reduce(1..1000, a, fn _, acc ->
-          Laniakea.CRDT.ORSet.merge(acc, b)
-        end)
-      end}
+      {"GCounter.increment",
+       fn ->
+         counter = Laniakea.CRDT.GCounter.new()
+
+         Enum.reduce(1..1000, counter, fn _, c ->
+           Laniakea.CRDT.GCounter.increment(c, "node1")
+         end)
+       end},
+      {"GCounter.merge",
+       fn ->
+         a = Laniakea.CRDT.GCounter.new() |> Laniakea.CRDT.GCounter.increment("a")
+         b = Laniakea.CRDT.GCounter.new() |> Laniakea.CRDT.GCounter.increment("b")
+
+         Enum.reduce(1..1000, a, fn _, acc ->
+           Laniakea.CRDT.GCounter.merge(acc, b)
+         end)
+       end},
+      {"ORSet.add",
+       fn ->
+         set = Laniakea.CRDT.ORSet.new()
+
+         Enum.reduce(1..1000, set, fn i, s ->
+           Laniakea.CRDT.ORSet.add(s, "element_#{i}", "node1")
+         end)
+       end},
+      {"ORSet.merge",
+       fn ->
+         a = Laniakea.CRDT.ORSet.new() |> Laniakea.CRDT.ORSet.add("item", "a")
+         b = Laniakea.CRDT.ORSet.new() |> Laniakea.CRDT.ORSet.add("other", "b")
+
+         Enum.reduce(1..1000, a, fn _, acc ->
+           Laniakea.CRDT.ORSet.merge(acc, b)
+         end)
+       end}
     ]
 
-    results = Enum.map(benchmarks, fn {name, fun} ->
-      {time, _} = :timer.tc(fun)
-      per_op = time / 1000
+    results =
+      Enum.map(benchmarks, fn {name, fun} ->
+        {time, _} = :timer.tc(fun)
+        per_op = time / 1000
 
-      unless config.quiet do
-        Mix.shell().info("#{name}: #{Float.round(per_op, 2)}μs/op")
-      end
+        unless config.quiet do
+          Mix.shell().info("#{name}: #{Float.round(per_op, 2)}μs/op")
+        end
 
-      %{name: name, time_us: time, per_op_us: Float.round(per_op, 2)}
-    end)
+        %{name: name, time_us: time, per_op_us: Float.round(per_op, 2)}
+      end)
 
     if config.format != "plain" do
       format_output(results, config)
@@ -326,44 +342,49 @@ defmodule Mix.Tasks.Laniakea do
       "CHANGELOG.md"
     ]
 
-    file_checks = Enum.map(required_files, fn file ->
-      path = Path.join([File.cwd!(), "..", file])
-      exists = File.exists?(path)
-      %{requirement: "File: #{file}", status: if(exists, do: "pass", else: "fail")}
-    end)
+    file_checks =
+      Enum.map(required_files, fn file ->
+        path = Path.join([File.cwd!(), "..", file])
+        exists = File.exists?(path)
+        %{requirement: "File: #{file}", status: if(exists, do: "pass", else: "fail")}
+      end)
 
     checks = checks ++ file_checks
 
     # Type safety check
-    checks = if level in ["bronze", "silver", "gold", "platinum"] do
-      dialyzer_result = try do
-        Mix.Task.run("dialyzer", ["--halt-exit-status"])
-        "pass"
-      rescue
-        _ -> "fail"
-      end
+    checks =
+      if level in ["bronze", "silver", "gold", "platinum"] do
+        dialyzer_result =
+          try do
+            Mix.Task.run("dialyzer", ["--halt-exit-status"])
+            "pass"
+          rescue
+            _ -> "fail"
+          end
 
-      checks ++ [%{requirement: "Type Safety (Dialyzer)", status: dialyzer_result}]
-    else
-      checks
-    end
+        checks ++ [%{requirement: "Type Safety (Dialyzer)", status: dialyzer_result}]
+      else
+        checks
+      end
 
     # CRDT verification
-    checks = if level in ["bronze", "silver", "gold", "platinum"] do
-      crdt_result = try do
-        :ok = Laniakea.CRDT.verify(Laniakea.CRDT.GCounter)
-        :ok = Laniakea.CRDT.verify(Laniakea.CRDT.PNCounter)
-        :ok = Laniakea.CRDT.verify(Laniakea.CRDT.ORSet)
-        :ok = Laniakea.CRDT.verify(Laniakea.CRDT.LWWRegister)
-        "pass"
-      rescue
-        _ -> "fail"
-      end
+    checks =
+      if level in ["bronze", "silver", "gold", "platinum"] do
+        crdt_result =
+          try do
+            :ok = Laniakea.CRDT.verify(Laniakea.CRDT.GCounter)
+            :ok = Laniakea.CRDT.verify(Laniakea.CRDT.PNCounter)
+            :ok = Laniakea.CRDT.verify(Laniakea.CRDT.ORSet)
+            :ok = Laniakea.CRDT.verify(Laniakea.CRDT.LWWRegister)
+            "pass"
+          rescue
+            _ -> "fail"
+          end
 
-      checks ++ [%{requirement: "CRDT Verification", status: crdt_result}]
-    else
-      checks
-    end
+        checks ++ [%{requirement: "CRDT Verification", status: crdt_result}]
+      else
+        checks
+      end
 
     # Display results
     unless config.quiet do
@@ -376,8 +397,8 @@ defmodule Mix.Tasks.Laniakea do
       end)
     end
 
-    passed = Enum.count(checks, & &1.status == "pass")
-    failed = Enum.count(checks, & &1.status == "fail")
+    passed = Enum.count(checks, &(&1.status == "pass"))
+    failed = Enum.count(checks, &(&1.status == "fail"))
 
     Mix.shell().info("\nResults: #{passed} passed, #{failed} failed")
 
@@ -399,30 +420,44 @@ defmodule Mix.Tasks.Laniakea do
   defp format_output(data, %{format: "table"}) when is_list(data) do
     if length(data) > 0 and is_map(hd(data)) do
       headers = data |> hd() |> Map.keys() |> Enum.map(&to_string/1)
-      rows = Enum.map(data, fn row ->
-        Enum.map(headers, fn h -> Map.get(row, String.to_existing_atom(h), "") |> format_value() end)
-      end)
 
-      widths = Enum.map(0..(length(headers) - 1), fn i ->
-        max(
-          String.length(Enum.at(headers, i)),
-          rows |> Enum.map(&Enum.at(&1, i)) |> Enum.map(&String.length/1) |> Enum.max(fn -> 0 end)
-        )
-      end)
+      rows =
+        Enum.map(data, fn row ->
+          Enum.map(headers, fn h ->
+            Map.get(row, String.to_existing_atom(h), "") |> format_value()
+          end)
+        end)
+
+      widths =
+        Enum.map(0..(length(headers) - 1), fn i ->
+          max(
+            String.length(Enum.at(headers, i)),
+            rows
+            |> Enum.map(&Enum.at(&1, i))
+            |> Enum.map(&String.length/1)
+            |> Enum.max(fn -> 0 end)
+          )
+        end)
 
       separator = "+" <> Enum.map_join(widths, "+", &String.duplicate("-", &1 + 2)) <> "+"
-      header_row = "|" <> Enum.map_join(Enum.zip(headers, widths), "|", fn {h, w} ->
-        " #{String.pad_trailing(h, w)} "
-      end) <> "|"
+
+      header_row =
+        "|" <>
+          Enum.map_join(Enum.zip(headers, widths), "|", fn {h, w} ->
+            " #{String.pad_trailing(h, w)} "
+          end) <> "|"
 
       Mix.shell().info(separator)
       Mix.shell().info(header_row)
       Mix.shell().info(separator)
 
       Enum.each(rows, fn row ->
-        row_str = "|" <> Enum.map_join(Enum.zip(row, widths), "|", fn {v, w} ->
-          " #{String.pad_trailing(v, w)} "
-        end) <> "|"
+        row_str =
+          "|" <>
+            Enum.map_join(Enum.zip(row, widths), "|", fn {v, w} ->
+              " #{String.pad_trailing(v, w)} "
+            end) <> "|"
+
         Mix.shell().info(row_str)
       end)
 

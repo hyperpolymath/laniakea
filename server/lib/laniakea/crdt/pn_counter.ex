@@ -93,7 +93,8 @@ defmodule Laniakea.CRDT.PNCounter do
   This is a compatibility alias for `increment_by/3`.
   """
   @spec increment(t(), node_id(), non_neg_integer()) :: t()
-  def increment(%PNCounter{} = counter, node_id, amount), do: increment_by(counter, node_id, amount)
+  def increment(%PNCounter{} = counter, node_id, amount),
+    do: increment_by(counter, node_id, amount)
 
   @doc """
   Increments the counter by a specific amount.
@@ -134,7 +135,8 @@ defmodule Laniakea.CRDT.PNCounter do
   This is a compatibility alias for `decrement_by/3`.
   """
   @spec decrement(t(), node_id(), non_neg_integer()) :: t()
-  def decrement(%PNCounter{} = counter, node_id, amount), do: decrement_by(counter, node_id, amount)
+  def decrement(%PNCounter{} = counter, node_id, amount),
+    do: decrement_by(counter, node_id, amount)
 
   @doc """
   Decrements the counter by a specific amount.
@@ -248,8 +250,7 @@ defmodule Laniakea.CRDT.PNCounter do
   Converts the counter to its string-keyed wire representation.
   """
   @spec to_wire(t()) :: %{
-          required(String.t()) =>
-            String.t() | integer() | %{node_id() => non_neg_integer()}
+          required(String.t()) => String.t() | integer() | %{node_id() => non_neg_integer()}
         }
   def to_wire(%PNCounter{positive: pos, negative: neg, version: version} = counter) do
     %{

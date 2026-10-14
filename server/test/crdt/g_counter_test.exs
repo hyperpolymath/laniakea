@@ -16,7 +16,8 @@ defmodule Laniakea.CRDT.GCounterTest do
 
   describe "increment/2" do
     test "increments the counter for a node" do
-      counter = GCounter.new()
+      counter =
+        GCounter.new()
         |> GCounter.increment("node1")
         |> GCounter.increment("node1")
         |> GCounter.increment("node1")
@@ -25,7 +26,8 @@ defmodule Laniakea.CRDT.GCounterTest do
     end
 
     test "tracks increments per node" do
-      counter = GCounter.new()
+      counter =
+        GCounter.new()
         |> GCounter.increment("node1")
         |> GCounter.increment("node2")
         |> GCounter.increment("node1")
@@ -36,7 +38,8 @@ defmodule Laniakea.CRDT.GCounterTest do
 
   describe "increment/3" do
     test "increments by a specific amount" do
-      counter = GCounter.new()
+      counter =
+        GCounter.new()
         |> GCounter.increment("node1", 5)
         |> GCounter.increment("node1", 3)
 
@@ -54,17 +57,20 @@ defmodule Laniakea.CRDT.GCounterTest do
 
   describe "merge/2" do
     test "merges two counters taking max per node" do
-      a = GCounter.new()
+      a =
+        GCounter.new()
         |> GCounter.increment("node1", 5)
         |> GCounter.increment("node2", 3)
 
-      b = GCounter.new()
+      b =
+        GCounter.new()
         |> GCounter.increment("node1", 3)
         |> GCounter.increment("node2", 7)
         |> GCounter.increment("node3", 2)
 
       merged = GCounter.merge(a, b)
-      assert GCounter.value(merged) == 14  # 5 + 7 + 2
+      # 5 + 7 + 2
+      assert GCounter.value(merged) == 14
     end
 
     test "is commutative" do
@@ -94,7 +100,8 @@ defmodule Laniakea.CRDT.GCounterTest do
 
   describe "to_wire/1 and from_wire/1" do
     test "round-trips correctly" do
-      counter = GCounter.new()
+      counter =
+        GCounter.new()
         |> GCounter.increment("node1", 5)
         |> GCounter.increment("node2", 3)
 

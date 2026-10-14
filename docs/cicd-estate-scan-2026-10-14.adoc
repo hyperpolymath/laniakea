@@ -1,0 +1,129 @@
+= CI/CD estate scan — actions-lock defect classes (2026-10-14)
+:toc:
+
+== Why
+
+Dependabot PR hyperpolymath/laniakea#98 ("bump the actions group with 4
+updates") could not go green. Investigation showed the bump itself was
+fine — it was inheriting five pre-existing, estate-pattern defects, each
+of which also fails unrelated PRs (docs-only PR #97 failed four of the
+same checks). This document records the root causes, the foundational
+fix landed for laniakea, and the measured estate exposure.
+
+== The five failing checks on PR #98, mapped to root causes
+
+[cols="1,1,2"]
+|===
+| Check | Failing step | Root cause
+
+| Quality Checks
+| `mix format --check-formatted` (server)
+| `server/` had no `.formatter.exs`, so `mix format` had no inputs and
+  raised; and 18 source/test files were not format-clean underneath that.
+  Fails on every PR (e.g. #95, #96, #97), independent of the PR's diff.
+  Reproduced and fixed with Elixir 1.15.8 / OTP 26 (CI's pinned versions):
+  added the standard Phoenix `.formatter.exs` and ran `mix format`;
+  `mix format --check-formatted` now passes. NOTE: the Credo / Deno steps
+  after this one in the Quality job were previously unreachable (skipped),
+  so they have never run green either — expect possible first-run findings
+  there on the next PR and treat them as the same pre-existing class.
+
+| actions.lock is in sync with the workflow YAML
+| `scripts/check-lock-sync.sh`
+| `casket-pages.yml` pins `haskell-actions/setup@v2.12.1` (bumped by PR
+  #96, YAML only) while `actions.lock` records `v2.12.0`. Dependabot
+  cannot update lockfile dependency records, so every grouped bump
+  inherits — and usually widens — this desync.
+
+| governance / Actions lockfile verify
+| `gh actions-lock --verify-local` (via standards)
+| Same class-B desync as above (two gates, one cause).
+
+| governance / Language / package anti-pattern policy
+| Check language-policy invariants (`check-language-policy.sh`)
+| `.claude/CLAUDE.md` listed Deno in its "### BANNED" table. Deno is
+  tier 2 (owner ruling 2026-10-14; Bun tier 1, pnpm 3, npm 4) and is
+  load-bearing in this repo (`client/`, `ci.yml`), so the policy text —
+  not the code — was wrong.
+
+| lint-workflows
+| Check SPDX headers
+| The linter tested `head -1` for `SPDX-License-Identifier`, but
+  `gh actions-lock` inserts `# This workflow is managed by gh
+  actions-lock.` at line 1 (three accumulated copies), pushing SPDX to
+  line 2 of every managed workflow. The estate's own lock tool
+  permanently re-breaks this gate. Standards' reusable already scans
+  the leading comment block for exactly this reason (2026-08-07 note);
+  the per-repo copy was never updated.
+|===
+
+Additionally, PR #98 itself carried two latent defects:
+
+* It bumped `github/codeql-action` to v4.38.3 *despite* the
+  `ignore: [github/codeql-action]` hold in `.github/dependabot.yml` —
+  the hold has no `versions:` constraint, so a SHA-form re-bump bypasses
+  it (nexia-list#101/#104 failure mode). A bypassable hold is worse than
+  none: it documents a false sense of safety. Removed; CodeQL is now
+  pinned to v4.38.3, which verified green on PR #98.
+* It left the comment `# v4.38.0 (4.38.1 blocked estate-wide;
+  nexia-list#100)` beside the new v4.38.3 SHA. Corrected to `# v4.38.3`.
+
+== Fix landed (this repo)
+
+* SPDX moved to line 1 of every workflow; `gh actions-lock` banners
+  de-duplicated to one. `workflow-linter.yml` now scans the leading
+  comment block, mirroring standards, so a lock refresh cannot
+  re-create the failure.
+* `actions.lock`: `haskell-actions/setup` record resynced to v2.12.1
+  (commit `0f8e8c99d88aeb3fbfd523f1ef2c6f762d10d64d`, the dereferenced
+  annotated-tag target); PR #98's four bumps applied
+  (`upload-artifact` v7.0.2, `codeql-action` v4.38.3, `smtp-notify-action`
+  v0.5.0) with their lock records.
+* `.github/dependabot.yml`: bypassable CodeQL hold removed, with the
+  reason recorded inline.
+* `.claude/CLAUDE.md`: Deno moved from BANNED to ALLOWED (tier 2).
+* Server sources formatted with `mix format` (Elixir 1.15 / OTP 26,
+  matching `ci.yml`).
+* `scripts/scan-estate-cicd.sh` (estate scanner) and
+  `scripts/fix-actions-lock-cicd.sh` (idempotent per-repo header fixer)
+  added for propagation.
+
+== Estate exposure (measured 2026-10-14, GitHub code search)
+
+* 351 public repositories under `hyperpolymath`.
+* 217 repositories contain `gh actions-lock`-managed workflows
+  (2,152 files match the banner) — every one has SPDX pushed off line 1
+  wherever the banner precedes it.
+* 243 repositories carry `.github/workflows/actions.lock`; 213 carry
+  both, i.e. are exposed to class-B desync on the next grouped
+  Dependabot bump that touches a ref Dependabot cannot record.
+* 248 repositories have `head -1` in a workflow file; any of those whose
+  `head -1` is an SPDX test (the estate template's
+  `workflow-linter.yml`, as in laniakea) fails on every PR.
+* Spot checks (`scan-estate-cicd.sh` on laniakea, standards, verisimdb,
+  cicd-squabbler) confirm classes A and B in standards itself.
+
+== Propagation
+
+Per-repo application is deliberately mechanical and reviewable:
+
+[source,sh]
+----
+git clone https://github.com/hyperpolymath/<repo> && cd <repo>
+<path-to>/scripts/fix-actions-lock-cicd.sh .
+./scripts/check-lock-sync.sh   # class B: resync via gh actions-lock in the same PR as any uses: change
+git diff                       # review, then open a PR per repo
+----
+
+Estate sweep (read-only report):
+
+[source,sh]
+----
+scripts/scan-estate-cicd.sh > estate-cicd-scan.csv
+----
+
+NOTE: This change set fixes laniakea and ships the propagation tooling.
+It does not push to the other ~350 repositories from this PR; each gets
+the same fix as its own reviewed PR, generated by the two scripts above.
+Bulk-pushing identical commits to hundreds of repositories without
+per-repo review is exactly the failure mode that created class B.

@@ -16,14 +16,16 @@ defmodule Laniakea.CRDT.ORSetTest do
 
   describe "add/3" do
     test "adds an element to the set" do
-      set = ORSet.new()
+      set =
+        ORSet.new()
         |> ORSet.add("apple", "node1")
 
       assert ORSet.member?(set, "apple")
     end
 
     test "can add the same element multiple times" do
-      set = ORSet.new()
+      set =
+        ORSet.new()
         |> ORSet.add("apple", "node1")
         |> ORSet.add("apple", "node2")
 
@@ -34,7 +36,8 @@ defmodule Laniakea.CRDT.ORSetTest do
 
   describe "remove/2" do
     test "removes an element from the set" do
-      set = ORSet.new()
+      set =
+        ORSet.new()
         |> ORSet.add("apple", "node1")
         |> ORSet.remove("apple")
 
@@ -42,7 +45,8 @@ defmodule Laniakea.CRDT.ORSetTest do
     end
 
     test "add-remove-add keeps the element" do
-      set = ORSet.new()
+      set =
+        ORSet.new()
         |> ORSet.add("apple", "node1")
         |> ORSet.remove("apple")
         |> ORSet.add("apple", "node2")
@@ -115,7 +119,8 @@ defmodule Laniakea.CRDT.ORSetTest do
 
   describe "elements/1" do
     test "returns all elements as a list" do
-      set = ORSet.new()
+      set =
+        ORSet.new()
         |> ORSet.add("a", "node1")
         |> ORSet.add("b", "node1")
         |> ORSet.add("c", "node1")
@@ -130,7 +135,8 @@ defmodule Laniakea.CRDT.ORSetTest do
 
   describe "to_wire/1 and from_wire/1" do
     test "round-trips correctly" do
-      set = ORSet.new()
+      set =
+        ORSet.new()
         |> ORSet.add("apple", "node1")
         |> ORSet.add("banana", "node2")
 

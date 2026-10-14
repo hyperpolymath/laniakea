@@ -25,6 +25,7 @@ The following files in `.machine_readable/` contain structured project metadata:
 |---------------|----------|-------|
 | **AffineScript** | Primary application code | Compiles to JS, type-safe |
 | **Bun** | JS runtime & package management (tier 1) | Default for all new work. Runs compiled ESM/JS directly — no bundler step. Uses an npm-compatible `package.json` plus `bun.lock` — both are expected, not anti-patterns. |
+| **Deno** | JS runtime (tier 2) | Permitted where already in use (client/, CI); Bun remains preferred for new work. pnpm is tier 3, npm tier 4 — none of these is banned. |
 | **Rust** | Performance-critical, systems, WASM | Preferred for CLI tools |
 | **Tauri 2.0+** | Mobile apps (iOS/Android) | Rust backend + web UI |
 | **Dioxus** | Mobile apps (native UI) | Pure Rust, React-like |
@@ -44,7 +45,6 @@ The following files in `.machine_readable/` contain structured project metadata:
 |--------|-------------|
 | TypeScript | AffineScript |
 | ReScript | AffineScript |
-| Deno | Bun |
 | Node.js | Bun |
 | npm | Bun |
 | pnpm/yarn | Bun |

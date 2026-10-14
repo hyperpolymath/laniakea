@@ -152,7 +152,8 @@ defmodule Laniakea.Policy.Engine do
   @impl true
   def init(_opts) do
     state = %{
-      clients: %{}  # node_id => %{capabilities: ..., profile: ...}
+      # node_id => %{capabilities: ..., profile: ...}
+      clients: %{}
     }
 
     Logger.info("[Policy.Engine] Started")
