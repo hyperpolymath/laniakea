@@ -91,7 +91,8 @@ defmodule Laniakea.Command.Bus do
   @impl true
   def init(_opts) do
     state = %{
-      processed_requests: %{}  # request_id => timestamp (for idempotency)
+      # request_id => timestamp (for idempotency)
+      processed_requests: %{}
     }
 
     Logger.info("[Command.Bus] Started")

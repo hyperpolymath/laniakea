@@ -123,7 +123,8 @@ defmodule Laniakea.CRDT.GCounter do
   end
 
   def increment(%GCounter{}, _node_id, amount) do
-    raise ArgumentError, "increment amount must be a non-negative integer, got: #{inspect(amount)}"
+    raise ArgumentError,
+          "increment amount must be a non-negative integer, got: #{inspect(amount)}"
   end
 
   @doc """
@@ -374,7 +375,8 @@ defmodule Laniakea.CRDT.GCounter do
   Converts the counter to its string-keyed wire representation.
   """
   @spec to_wire(t()) :: %{
-          required(String.t()) => String.t() | non_neg_integer() | %{node_id() => non_neg_integer()}
+          required(String.t()) =>
+            String.t() | non_neg_integer() | %{node_id() => non_neg_integer()}
         }
   def to_wire(%GCounter{counts: counts, version: version} = counter) do
     %{

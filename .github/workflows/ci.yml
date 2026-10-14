@@ -1,6 +1,4 @@
-# This workflow is managed by gh actions-lock.
 # SPDX-License-Identifier: MPL-2.0
-# This workflow is managed by gh actions-lock.
 # This workflow is managed by gh actions-lock.
 # Laniakea CI Pipeline
 
@@ -252,13 +250,13 @@ jobs:
           deno bundle src/Main.mjs dist/laniakea.bundle.js || true
 
       - name: Upload server artifact
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: server-release
           path: server/_build/prod/rel/laniakea
 
       - name: Upload client artifact
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: client-bundle
           path: client/dist/

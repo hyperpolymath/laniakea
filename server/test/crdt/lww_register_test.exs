@@ -21,7 +21,8 @@ defmodule Laniakea.CRDT.LWWRegisterTest do
     end
 
     test "overwrites previous value" do
-      reg = LWWRegister.new()
+      reg =
+        LWWRegister.new()
         |> LWWRegister.set("first", "node1")
         |> LWWRegister.set("second", "node1")
 
@@ -31,7 +32,8 @@ defmodule Laniakea.CRDT.LWWRegisterTest do
 
   describe "set_with_timestamp/4" do
     test "sets value with explicit timestamp" do
-      reg = LWWRegister.new()
+      reg =
+        LWWRegister.new()
         |> LWWRegister.set_with_timestamp("value", "node1", 12345)
 
       assert LWWRegister.value(reg) == "value"
@@ -63,7 +65,8 @@ defmodule Laniakea.CRDT.LWWRegisterTest do
       a = LWWRegister.new() |> LWWRegister.set_with_timestamp("a", "n1", 100)
       b = LWWRegister.new() |> LWWRegister.set_with_timestamp("b", "n2", 200)
 
-      assert LWWRegister.value(LWWRegister.merge(a, b)) == LWWRegister.value(LWWRegister.merge(b, a))
+      assert LWWRegister.value(LWWRegister.merge(a, b)) ==
+               LWWRegister.value(LWWRegister.merge(b, a))
     end
 
     test "is associative" do
@@ -86,7 +89,8 @@ defmodule Laniakea.CRDT.LWWRegisterTest do
 
   describe "to_wire/1 and from_wire/1" do
     test "round-trips correctly" do
-      reg = LWWRegister.new()
+      reg =
+        LWWRegister.new()
         |> LWWRegister.set_with_timestamp("test_value", "node1", 12345)
 
       wire = LWWRegister.to_wire(reg)

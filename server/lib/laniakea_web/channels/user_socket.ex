@@ -6,7 +6,7 @@ defmodule LaniakeaWeb.UserSocket do
   require Logger
 
   # Channel routes
-  channel "crdt:*", LaniakeaWeb.CRDTChannel
+  channel("crdt:*", LaniakeaWeb.CRDTChannel)
 
   @impl true
   def connect(%{"node_id" => node_id, "capabilities" => capabilities}, socket, _connect_info) do

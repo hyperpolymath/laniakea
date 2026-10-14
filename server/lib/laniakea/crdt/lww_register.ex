@@ -248,7 +248,10 @@ defmodule Laniakea.CRDT.LWWRegister do
   end
 
   defimpl Inspect do
-    def inspect(%Laniakea.CRDT.LWWRegister{value: v, timestamp: ts, node_id: n, version: ver}, _opts) do
+    def inspect(
+          %Laniakea.CRDT.LWWRegister{value: v, timestamp: ts, node_id: n, version: ver},
+          _opts
+        ) do
       "#LWWRegister<#{inspect(v)}, ts=#{ts}, node=#{n || "nil"}, v#{ver}>"
     end
   end

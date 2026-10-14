@@ -123,9 +123,10 @@ defmodule LaniakeaWeb.CRDTChannel do
 
     {:ok, _} = Registry.get_or_create(key, LWWRegister)
 
-    {:ok, new_crdt} = Registry.update(key, fn crdt ->
-      LWWRegister.set(crdt, value, node_id)
-    end)
+    {:ok, new_crdt} =
+      Registry.update(key, fn crdt ->
+        LWWRegister.set(crdt, value, node_id)
+      end)
 
     broadcast_state(socket, new_crdt)
     {:reply, {:ok, %{state: LWWRegister.to_map(new_crdt)}}, socket}
@@ -137,9 +138,10 @@ defmodule LaniakeaWeb.CRDTChannel do
 
     {:ok, _} = Registry.get_or_create(key, ORSet)
 
-    {:ok, new_crdt} = Registry.update(key, fn crdt ->
-      ORSet.add(crdt, element, node_id)
-    end)
+    {:ok, new_crdt} =
+      Registry.update(key, fn crdt ->
+        ORSet.add(crdt, element, node_id)
+      end)
 
     broadcast_state(socket, new_crdt)
     {:reply, {:ok, %{state: ORSet.to_map(new_crdt)}}, socket}
