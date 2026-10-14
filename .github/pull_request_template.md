@@ -19,25 +19,23 @@ Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 ### Required
 
 - [ ] Tests pass (`just test` or equivalent)
-- [ ] Code is formatted (`just fmt` or equivalent)
-- [ ] Linter is clean (no new warnings or errors)
-- [ ] No banned language patterns (no Python, Go, TypeScript or ReScript; JavaScript runs Bun > Deno > pnpm > npm)
+- [ ] Code is formatted (`mix format --check-formatted` in `server/`, `deno fmt --check` in `client/`)
+- [ ] Linter is clean (`mix credo --strict`, `deno lint`; no new warnings)
+- [ ] No banned language patterns (no Python, Go, TypeScript or ReScript; JavaScript runs Bun > Deno > pnpm > npm — Bun/bunx first, Deno only where already load-bearing)
 - [ ] No `unsafe` blocks without `// SAFETY:` comments
 - [ ] No banned functions (`believe_me`, `unsafeCoerce`, `Obj.magic`, `Admitted`, `sorry`)
 - [ ] SPDX license headers present on all new/modified source files
 - [ ] No secrets, credentials, or `.env` files included
+- [ ] If any `uses:` changed: `actions.lock` resynced in this same PR (`./scripts/check-lock-sync.sh` passes)
 
 ### As Applicable
 
-- [ ] Repo deed (`*_chora.deed`) `(status)` / `(maturity)` updated (if project state changed)
-- [ ] Repo deed `(ecosystem)` updated (if integrations changed)
-- [ ] Repo deed `(meta)` and/or `docs/decisions/` updated (if architectural decisions changed)
-- [ ] `docs/status/ROADMAP.adoc` updated (if milestones or next actions changed)
-- [ ] Documentation updated for user-facing changes
-- [ ] `TOPOLOGY.md` updated (if architecture changed)
-- [ ] `CHANGELOG` or release notes updated
-- [ ] New dependencies reviewed for license compatibility (MPL-2.0 / MPL-2.0)
-- [ ] ABI/FFI changes validated (`src/interface/abi/` and `src/interface/ffi/` consistent)
+- [ ] `.machine_readable/6a2/STATE.a2ml` updated (if project state changed)
+- [ ] `docs/` updated for architectural decisions or user-facing changes
+- [ ] `TOPOLOGY.adoc` updated (if architecture changed)
+- [ ] `CHANGELOG.adoc` or release notes updated
+- [ ] New dependencies reviewed for license compatibility (MPL-2.0)
+- [ ] ABI changes validated (`src/abi/` Idris2 definitions and their Zig/FFI counterparts consistent)
 
 ## Testing
 

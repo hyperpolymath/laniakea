@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: MPL-2.0
+#
+# Repo-local gitleaks config. Inherits the estate baseline (staged into the
+# workspace root as .gitleaks-estate.toml by standards'
+# secret-scanner-reusable.yml) and adds only the exemptions that are true
+# for THIS repository.
+
+[extend]
+path = ".gitleaks-estate.toml"
+
+[allowlist]
+description = "Laniakea: vendored dependency trees are upstream code, not ours"
+paths = [
+  # server/deps/** is Mix's vendored dependency directory (gitignored; it
+  # was briefly auto-committed in 2026-02/03 by a sync job and removed).
+  # The git-history gitleaks pass scans those historical blobs and flags
+  # upstream libraries' own documentation examples (e.g. Phoenix's
+  # Phoenix.Token / Plug.Crypto example secrets, also public upstream).
+  # Our own code lives in server/lib, server/test and server/config, which
+  # remain fully scanned in both passes.
+  '''(^|/)server/deps/''',
+  '''(^|/)server/_build/''',
+]

@@ -555,7 +555,12 @@ gen-secret:
 
 # Generate UUID
 gen-uuid:
-    @{{deno}} eval "console.log(crypto.randomUUID())"
+    # ESTATE-UUID-V8 profile T (standards ADR-008): time-ordered v8, not
+    # crypto.randomUUID() (that mints v4, which the UUID conformance gate
+    # rejects). Layout mirrors Bun.randomUUIDv7() with the version nibble
+    # set to 8, implemented runtime-agnostically (Deno/Bun both provide
+    # crypto.getRandomValues).
+    @{{deno}} eval "const b=new Uint8Array(16); crypto.getRandomValues(b); const ms=BigInt(Date.now()); for(let i=0;i<6;i++) b[i]=Number((ms>>BigInt(8*(5-i)))&0xffn); b[6]=(b[6]&0x0f)|0x80; b[8]=(b[8]&0x3f)|0x80; const h=[...b].map(x=>x.toString(16).padStart(2,'0')).join(''); console.log(h.slice(0,8)+'-'+h.slice(8,12)+'-'+h.slice(12,16)+'-'+h.slice(16,20)+'-'+h.slice(20))"
 
 # Count lines of code
 loc:
