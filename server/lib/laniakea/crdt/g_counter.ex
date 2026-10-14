@@ -54,6 +54,13 @@ defmodule Laniakea.CRDT.GCounter do
           version: non_neg_integer()
         }
 
+  # The exact type of a freshly constructed counter. `new/0` is specified
+  # with this rather than `t()`: Dialyzer's success typing for `new/0` is
+  # the empty struct, so `:: t()` is a strict supertype and is reported
+  # under the project's `:underspecs` flag. Naming it here (instead of a
+  # struct literal in the `@spec`) also satisfies Credo's SpecWithStruct.
+  @type empty :: %GCounter{counts: %{}, version: 0}
+
   @enforce_keys []
   defstruct counts: %{}, version: 0
 
@@ -69,7 +76,7 @@ defmodule Laniakea.CRDT.GCounter do
       iex> GCounter.new()
       %GCounter{counts: %{}, version: 0}
   """
-  @spec new() :: t()
+  @spec new() :: empty()
   def new, do: %GCounter{}
 
   @doc """

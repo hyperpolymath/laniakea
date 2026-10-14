@@ -47,6 +47,14 @@ defmodule Laniakea.CRDT.PNCounter do
           version: non_neg_integer()
         }
 
+  # The exact type of a freshly constructed counter (see GCounter.empty/0
+  # for why `new/0` is not specified as `:: t()`).
+  @type empty :: %PNCounter{
+          positive: GCounter.empty(),
+          negative: GCounter.empty(),
+          version: 0
+        }
+
   defstruct positive: %GCounter{}, negative: %GCounter{}, version: 0
 
   # ============================================================================
@@ -56,7 +64,7 @@ defmodule Laniakea.CRDT.PNCounter do
   @doc """
   Creates a new, empty PN-Counter.
   """
-  @spec new() :: t()
+  @spec new() :: empty()
   def new do
     %PNCounter{
       positive: GCounter.new(),
