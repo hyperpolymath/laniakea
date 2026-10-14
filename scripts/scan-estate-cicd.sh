@@ -37,8 +37,11 @@ OWNER="${SCAN_OWNER:-hyperpolymath}"
 WORK="$(mktemp -d)"
 [ "${KEEP:-}" = "1" ] || trap 'rm -rf "$WORK"' EXIT
 
+# Emit one CSV row (repo,class,"detail"); double quotes in detail are swapped for single quotes.
 emit() { printf '%s,%s,"%s"\n' "$1" "$2" "$(printf '%s' "$3" | tr '"' "'")"; }
 
+# Shallow-clone a single repo into $WORK and scan its workflows/dependabot config/CLAUDE.md
+# for defect classes A-E, emitting a CSV row per finding via emit().
 scan_repo() {
   local full="$1" dir="$WORK/$(printf '%s' "$1" | tr '/' '_')"
   if ! git clone -q --depth 1 "https://github.com/$full.git" "$dir" 2>/dev/null; then
