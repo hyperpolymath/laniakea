@@ -579,7 +579,7 @@ Generate a UUID.
 [source,bash]
 ----
 just gen-uuid
-# Output: 550e8400-e29b-41d4-a716-446655440000
+# Output: 019c3f7a-2b1e-8000-9a3f-4c5d6e7f8091 (ESTATE-UUID-V8 profile T; see standards ADR-008)
 ----
 
 ==== `just loc`
