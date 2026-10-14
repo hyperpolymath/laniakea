@@ -38,7 +38,7 @@ defmodule Laniakea.Command.Bus do
   require Logger
 
   alias Laniakea.CRDT
-  alias Laniakea.CRDT.{GCounter, PNCounter, ORSet, LWWRegister, Registry}
+  alias Laniakea.CRDT.{GCounter, LWWRegister, ORSet, PNCounter, Registry}
 
   @type command :: %{
           type: String.t(),
@@ -71,7 +71,7 @@ defmodule Laniakea.Command.Bus do
 
       {:ok, %{state: new_state}} = Bus.execute(command)
   """
-  @spec execute(map()) :: result()
+  @spec execute(command :: map()) :: result()
   def execute(command) do
     GenServer.call(__MODULE__, {:execute, command})
   end
@@ -79,7 +79,7 @@ defmodule Laniakea.Command.Bus do
   @doc """
   Validates a command without executing it.
   """
-  @spec validate(map()) :: :ok | {:error, atom(), String.t()}
+  @spec validate(command :: map()) :: :ok | {:error, atom(), String.t()}
   def validate(command) do
     GenServer.call(__MODULE__, {:validate, command})
   end

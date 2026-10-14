@@ -38,6 +38,8 @@ defmodule Mix.Tasks.Laniakea do
 
   @shortdoc "Laniakea CLI for server operations"
 
+  alias Laniakea.CRDT.{GCounter, LWWRegister, ORSet, PNCounter}
+
   @impl Mix.Task
   def run(args) do
     {opts, commands, _} =
@@ -62,44 +64,29 @@ defmodule Mix.Tasks.Laniakea do
       quiet: Keyword.get(opts, :quiet, false)
     }
 
-    case commands do
-      [] ->
-        print_help()
+    dispatch(commands, config)
+  end
 
-      ["help"] ->
-        print_help()
+  defp dispatch([], _config), do: print_help()
+  defp dispatch(["help"], _config), do: print_help()
+  defp dispatch(["crdt.list"], config), do: cmd_crdt_list(config)
+  defp dispatch(["crdt.verify" | rest], config), do: cmd_crdt_verify(rest, config)
+  defp dispatch(["crdt.bench" | rest], config), do: cmd_crdt_bench(rest, config)
+  defp dispatch(["gen.secret"], config), do: cmd_gen_secret(config)
+  defp dispatch(["gen.uuid"], config), do: cmd_gen_uuid(config)
+  defp dispatch(["gen.node_id"], config), do: cmd_gen_node_id(config)
+  defp dispatch(["rsr" | rest], config), do: cmd_rsr(rest, config)
 
-      ["crdt.list"] ->
-        cmd_crdt_list(config)
-
-      ["crdt.verify" | rest] ->
-        cmd_crdt_verify(rest, config)
-
-      ["crdt.bench" | rest] ->
-        cmd_crdt_bench(rest, config)
-
-      ["gen.secret"] ->
-        cmd_gen_secret(config)
-
-      ["gen.uuid"] ->
-        cmd_gen_uuid(config)
-
-      ["gen.node_id"] ->
-        cmd_gen_node_id(config)
-
-      ["status"] ->
-        case Application.ensure_all_started(:laniakea) do
-          {:ok, _started} -> cmd_status(config)
-          {:error, reason} -> Mix.raise("Unable to start Laniakea: #{inspect(reason)}")
-        end
-
-      ["rsr" | rest] ->
-        cmd_rsr(rest, config)
-
-      [unknown | _] ->
-        Mix.shell().error("Unknown command: #{unknown}")
-        Mix.shell().error("Run 'mix laniakea help' for usage.")
+  defp dispatch(["status"], config) do
+    case Application.ensure_all_started(:laniakea) do
+      {:ok, _started} -> cmd_status(config)
+      {:error, reason} -> Mix.raise("Unable to start Laniakea: #{inspect(reason)}")
     end
+  end
+
+  defp dispatch([unknown | _], _config) do
+    Mix.shell().error("Unknown command: #{unknown}")
+    Mix.shell().error("Run 'mix laniakea help' for usage.")
   end
 
   defp print_help do
@@ -144,38 +131,17 @@ defmodule Mix.Tasks.Laniakea do
       case args do
         [] ->
           [
-            Laniakea.CRDT.GCounter,
-            Laniakea.CRDT.PNCounter,
-            Laniakea.CRDT.ORSet,
-            Laniakea.CRDT.LWWRegister
+            GCounter,
+            PNCounter,
+            ORSet,
+            LWWRegister
           ]
 
         names ->
           Enum.map(names, &String.to_existing_atom("Elixir.Laniakea.CRDT.#{&1}"))
       end
 
-    results =
-      Enum.map(modules, fn module ->
-        name = module |> Module.split() |> List.last()
-
-        result =
-          try do
-            case Laniakea.CRDT.verify(module) do
-              :ok -> %{name: name, status: "pass"}
-              {:error, reason} -> %{name: name, status: "fail", error: inspect(reason)}
-            end
-          rescue
-            e -> %{name: name, status: "error", error: Exception.message(e)}
-          end
-
-        unless config.quiet do
-          symbol = if result.status == "pass", do: "✓", else: "✗"
-          color = if result.status == "pass", do: :green, else: :red
-          Mix.shell().info([color, "#{symbol} #{name}", :reset])
-        end
-
-        result
-      end)
+    results = Enum.map(modules, &verify_module(&1, config))
 
     if config.format != "plain" do
       format_output(results, config)
@@ -188,6 +154,28 @@ defmodule Mix.Tasks.Laniakea do
     end
   end
 
+  defp verify_module(module, config) do
+    name = module |> Module.split() |> List.last()
+    result = run_verification(module, name)
+
+    unless config.quiet do
+      symbol = if result.status == "pass", do: "✓", else: "✗"
+      color = if result.status == "pass", do: :green, else: :red
+      Mix.shell().info([color, "#{symbol} #{name}", :reset])
+    end
+
+    result
+  end
+
+  defp run_verification(module, name) do
+    case Laniakea.CRDT.verify(module) do
+      :ok -> %{name: name, status: "pass"}
+      {:error, reason} -> %{name: name, status: "fail", error: inspect(reason)}
+    end
+  rescue
+    e -> %{name: name, status: "error", error: Exception.message(e)}
+  end
+
   defp cmd_crdt_bench(_args, config) do
     unless config.quiet do
       Mix.shell().info("Running CRDT benchmarks...")
@@ -196,36 +184,36 @@ defmodule Mix.Tasks.Laniakea do
     benchmarks = [
       {"GCounter.increment",
        fn ->
-         counter = Laniakea.CRDT.GCounter.new()
+         counter = GCounter.new()
 
          Enum.reduce(1..1000, counter, fn _, c ->
-           Laniakea.CRDT.GCounter.increment(c, "node1")
+           GCounter.increment(c, "node1")
          end)
        end},
       {"GCounter.merge",
        fn ->
-         a = Laniakea.CRDT.GCounter.new() |> Laniakea.CRDT.GCounter.increment("a")
-         b = Laniakea.CRDT.GCounter.new() |> Laniakea.CRDT.GCounter.increment("b")
+         a = GCounter.new() |> GCounter.increment("a")
+         b = GCounter.new() |> GCounter.increment("b")
 
          Enum.reduce(1..1000, a, fn _, acc ->
-           Laniakea.CRDT.GCounter.merge(acc, b)
+           GCounter.merge(acc, b)
          end)
        end},
       {"ORSet.add",
        fn ->
-         set = Laniakea.CRDT.ORSet.new()
+         set = ORSet.new()
 
          Enum.reduce(1..1000, set, fn i, s ->
-           Laniakea.CRDT.ORSet.add(s, "element_#{i}", "node1")
+           ORSet.add(s, "element_#{i}", "node1")
          end)
        end},
       {"ORSet.merge",
        fn ->
-         a = Laniakea.CRDT.ORSet.new() |> Laniakea.CRDT.ORSet.add("item", "a")
-         b = Laniakea.CRDT.ORSet.new() |> Laniakea.CRDT.ORSet.add("other", "b")
+         a = ORSet.new() |> ORSet.add("item", "a")
+         b = ORSet.new() |> ORSet.add("other", "b")
 
          Enum.reduce(1..1000, a, fn _, acc ->
-           Laniakea.CRDT.ORSet.merge(acc, b)
+           ORSet.merge(acc, b)
          end)
        end}
     ]
@@ -351,51 +339,9 @@ defmodule Mix.Tasks.Laniakea do
 
     checks = checks ++ file_checks
 
-    # Type safety check
-    checks =
-      if level in ["bronze", "silver", "gold", "platinum"] do
-        dialyzer_result =
-          try do
-            Mix.Task.run("dialyzer", ["--halt-exit-status"])
-            "pass"
-          rescue
-            _ -> "fail"
-          end
+    checks = checks ++ typed_checks(level)
 
-        checks ++ [%{requirement: "Type Safety (Dialyzer)", status: dialyzer_result}]
-      else
-        checks
-      end
-
-    # CRDT verification
-    checks =
-      if level in ["bronze", "silver", "gold", "platinum"] do
-        crdt_result =
-          try do
-            :ok = Laniakea.CRDT.verify(Laniakea.CRDT.GCounter)
-            :ok = Laniakea.CRDT.verify(Laniakea.CRDT.PNCounter)
-            :ok = Laniakea.CRDT.verify(Laniakea.CRDT.ORSet)
-            :ok = Laniakea.CRDT.verify(Laniakea.CRDT.LWWRegister)
-            "pass"
-          rescue
-            _ -> "fail"
-          end
-
-        checks ++ [%{requirement: "CRDT Verification", status: crdt_result}]
-      else
-        checks
-      end
-
-    # Display results
-    unless config.quiet do
-      Mix.shell().info("\n=== RSR Compliance Check (#{level}) ===\n")
-
-      Enum.each(checks, fn check ->
-        symbol = if check.status == "pass", do: "✓", else: "✗"
-        color = if check.status == "pass", do: :green, else: :red
-        Mix.shell().info([color, "#{symbol} #{check.requirement}", :reset])
-      end)
-    end
+    print_rsr_results(checks, level, config)
 
     passed = Enum.count(checks, &(&1.status == "pass"))
     failed = Enum.count(checks, &(&1.status == "fail"))
@@ -411,6 +357,46 @@ defmodule Mix.Tasks.Laniakea do
     end
   end
 
+  defp typed_checks(level) when level in ["bronze", "silver", "gold", "platinum"] do
+    [
+      %{requirement: "Type Safety (Dialyzer)", status: dialyzer_status()},
+      %{requirement: "CRDT Verification", status: crdt_suite_status()}
+    ]
+  end
+
+  defp typed_checks(_level), do: []
+
+  defp dialyzer_status do
+    Mix.Task.run("dialyzer", ["--halt-exit-status"])
+    "pass"
+  rescue
+    _ -> "fail"
+  end
+
+  defp crdt_suite_status do
+    :ok = Laniakea.CRDT.verify(GCounter)
+    :ok = Laniakea.CRDT.verify(PNCounter)
+    :ok = Laniakea.CRDT.verify(ORSet)
+    :ok = Laniakea.CRDT.verify(LWWRegister)
+    "pass"
+  rescue
+    _ -> "fail"
+  end
+
+  defp print_rsr_results(checks, level, config) do
+    unless config.quiet do
+      Mix.shell().info("\n=== RSR Compliance Check (#{level}) ===\n")
+
+      Enum.each(checks, &print_rsr_check/1)
+    end
+  end
+
+  defp print_rsr_check(check) do
+    symbol = if check.status == "pass", do: "✓", else: "✗"
+    color = if check.status == "pass", do: :green, else: :red
+    Mix.shell().info([color, "#{symbol} #{check.requirement}", :reset])
+  end
+
   # Formatting Helpers
 
   defp format_output(data, %{format: "json"}) do
@@ -418,49 +404,16 @@ defmodule Mix.Tasks.Laniakea do
   end
 
   defp format_output(data, %{format: "table"}) when is_list(data) do
-    if length(data) > 0 and is_map(hd(data)) do
+    if match?([_ | _], data) and is_map(hd(data)) do
       headers = data |> hd() |> Map.keys() |> Enum.map(&to_string/1)
-
-      rows =
-        Enum.map(data, fn row ->
-          Enum.map(headers, fn h ->
-            Map.get(row, String.to_existing_atom(h), "") |> format_value()
-          end)
-        end)
-
-      widths =
-        Enum.map(0..(length(headers) - 1), fn i ->
-          max(
-            String.length(Enum.at(headers, i)),
-            rows
-            |> Enum.map(&Enum.at(&1, i))
-            |> Enum.map(&String.length/1)
-            |> Enum.max(fn -> 0 end)
-          )
-        end)
-
+      rows = table_rows(data, headers)
+      widths = column_widths(headers, rows)
       separator = "+" <> Enum.map_join(widths, "+", &String.duplicate("-", &1 + 2)) <> "+"
 
-      header_row =
-        "|" <>
-          Enum.map_join(Enum.zip(headers, widths), "|", fn {h, w} ->
-            " #{String.pad_trailing(h, w)} "
-          end) <> "|"
-
       Mix.shell().info(separator)
-      Mix.shell().info(header_row)
+      Mix.shell().info(render_row(headers, widths))
       Mix.shell().info(separator)
-
-      Enum.each(rows, fn row ->
-        row_str =
-          "|" <>
-            Enum.map_join(Enum.zip(row, widths), "|", fn {v, w} ->
-              " #{String.pad_trailing(v, w)} "
-            end) <> "|"
-
-        Mix.shell().info(row_str)
-      end)
-
+      Enum.each(rows, fn row -> Mix.shell().info(render_row(row, widths)) end)
       Mix.shell().info(separator)
     else
       Mix.shell().info(inspect(data))
@@ -469,6 +422,30 @@ defmodule Mix.Tasks.Laniakea do
 
   defp format_output(data, _config) do
     Mix.shell().info(inspect(data, pretty: true))
+  end
+
+  defp table_rows(data, headers) do
+    Enum.map(data, fn row ->
+      Enum.map(headers, fn h ->
+        Map.get(row, String.to_existing_atom(h), "") |> format_value()
+      end)
+    end)
+  end
+
+  defp column_widths(headers, rows) do
+    headers
+    |> Enum.with_index()
+    |> Enum.map(fn {header, i} ->
+      cell_lengths = Enum.map(rows, fn row -> String.length(Enum.at(row, i)) end)
+      max(String.length(header), Enum.max(cell_lengths, fn -> 0 end))
+    end)
+  end
+
+  defp render_row(cells, widths) do
+    "|" <>
+      Enum.map_join(Enum.zip(cells, widths), "|", fn {v, w} ->
+        " #{String.pad_trailing(v, w)} "
+      end) <> "|"
   end
 
   defp format_value(v) when is_binary(v), do: v

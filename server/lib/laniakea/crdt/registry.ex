@@ -62,13 +62,13 @@ defmodule Laniakea.CRDT.Registry do
   @doc """
   Gets a CRDT by key. Returns nil if not found.
   """
-  @spec get(key()) :: CRDT.crdt() | nil
+  @spec get(key :: key()) :: CRDT.crdt() | nil
   def get(key), do: GenServer.call(__MODULE__, {:get, key})
 
   @doc """
   Gets a CRDT by key, or creates a new one if not found.
   """
-  @spec get_or_create(key(), module()) :: {:ok, CRDT.crdt()}
+  @spec get_or_create(key :: key(), crdt_module :: module()) :: {:ok, CRDT.crdt()}
   def get_or_create(key, crdt_module) do
     GenServer.call(__MODULE__, {:get_or_create, key, crdt_module})
   end
@@ -76,13 +76,14 @@ defmodule Laniakea.CRDT.Registry do
   @doc """
   Sets a CRDT directly. Use `update/2` for most cases.
   """
-  @spec put(key(), CRDT.crdt()) :: :ok
+  @spec put(key :: key(), crdt :: CRDT.crdt()) :: :ok
   def put(key, crdt), do: GenServer.call(__MODULE__, {:put, key, crdt})
 
   @doc """
   Updates a CRDT using a function. Broadcasts the update to subscribers.
   """
-  @spec update(key(), (CRDT.crdt() -> CRDT.crdt())) :: {:ok, CRDT.crdt()} | {:error, :not_found}
+  @spec update(key :: key(), fun :: (CRDT.crdt() -> CRDT.crdt())) ::
+          {:ok, CRDT.crdt()} | {:error, :not_found}
   def update(key, fun) when is_function(fun, 1) do
     GenServer.call(__MODULE__, {:update, key, fun})
   end
@@ -91,7 +92,7 @@ defmodule Laniakea.CRDT.Registry do
   Merges incoming CRDT state with existing state.
   This is the core CRDT operation - used when receiving state from clients.
   """
-  @spec merge(key(), CRDT.crdt()) :: {:ok, CRDT.crdt()}
+  @spec merge(key :: key(), incoming_crdt :: CRDT.crdt()) :: {:ok, CRDT.crdt()}
   def merge(key, incoming_crdt) do
     GenServer.call(__MODULE__, {:merge, key, incoming_crdt})
   end
@@ -99,7 +100,8 @@ defmodule Laniakea.CRDT.Registry do
   @doc """
   Computes the delta between current state and a client's last known version.
   """
-  @spec delta(key(), CRDT.crdt()) :: {:ok, CRDT.crdt()} | {:error, :not_found}
+  @spec delta(key :: key(), client_state :: CRDT.crdt()) ::
+          {:ok, CRDT.crdt()} | {:error, :not_found}
   def delta(key, client_state) do
     GenServer.call(__MODULE__, {:delta, key, client_state})
   end
@@ -107,13 +109,13 @@ defmodule Laniakea.CRDT.Registry do
   @doc """
   Subscribes a process to updates for a key.
   """
-  @spec subscribe(key()) :: :ok
+  @spec subscribe(key :: key()) :: :ok
   def subscribe(key), do: GenServer.cast(__MODULE__, {:subscribe, key, self()})
 
   @doc """
   Unsubscribes a process from updates for a key.
   """
-  @spec unsubscribe(key()) :: :ok
+  @spec unsubscribe(key :: key()) :: :ok
   def unsubscribe(key), do: GenServer.cast(__MODULE__, {:unsubscribe, key, self()})
 
   @doc """
@@ -125,7 +127,7 @@ defmodule Laniakea.CRDT.Registry do
   @doc """
   Deletes a CRDT from the registry.
   """
-  @spec delete(key()) :: :ok
+  @spec delete(key :: key()) :: :ok
   def delete(key), do: GenServer.call(__MODULE__, {:delete, key})
 
   # ============================================================================

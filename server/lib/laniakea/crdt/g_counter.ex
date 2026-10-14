@@ -69,7 +69,7 @@ defmodule Laniakea.CRDT.GCounter do
       iex> GCounter.new()
       %GCounter{counts: %{}, version: 0}
   """
-  @spec new() :: %GCounter{counts: %{}, version: 0}
+  @spec new() :: t()
   def new, do: %GCounter{}
 
   @doc """
@@ -80,7 +80,7 @@ defmodule Laniakea.CRDT.GCounter do
       iex> GCounter.from_map(%{"alice" => 3, "bob" => 2})
       %GCounter{counts: %{"alice" => 3, "bob" => 2}, version: 0}
   """
-  @spec from_map(map()) :: t()
+  @spec from_map(counts :: map()) :: t()
   def from_map(counts) when is_map(counts) do
     %GCounter{counts: counts, version: 0}
   end
@@ -100,7 +100,7 @@ defmodule Laniakea.CRDT.GCounter do
       iex> counter.counts["node1"]
       1
   """
-  @spec increment(t(), node_id()) :: t()
+  @spec increment(counter :: t(), node_id :: node_id()) :: t()
   def increment(%GCounter{counts: counts, version: v} = _counter, node_id)
       when is_binary(node_id) do
     current = Map.get(counts, node_id, 0)
@@ -116,7 +116,7 @@ defmodule Laniakea.CRDT.GCounter do
 
   This is a compatibility alias for `increment_by/3`.
   """
-  @spec increment(t(), node_id(), non_neg_integer()) :: t()
+  @spec increment(counter :: t(), node_id :: node_id(), amount :: non_neg_integer()) :: t()
   def increment(%GCounter{} = counter, node_id, amount)
       when is_binary(node_id) and is_integer(amount) and amount >= 0 do
     increment_by(counter, node_id, amount)
@@ -136,7 +136,7 @@ defmodule Laniakea.CRDT.GCounter do
       iex> GCounter.value(counter)
       5
   """
-  @spec increment_by(t(), node_id(), non_neg_integer()) :: t()
+  @spec increment_by(counter :: t(), node_id :: node_id(), amount :: non_neg_integer()) :: t()
   def increment_by(%GCounter{counts: counts, version: v} = _counter, node_id, amount)
       when is_binary(node_id) and is_integer(amount) and amount >= 0 do
     current = Map.get(counts, node_id, 0)
@@ -164,7 +164,7 @@ defmodule Laniakea.CRDT.GCounter do
       3
   """
   @impl Laniakea.CRDT
-  @spec value(t()) :: non_neg_integer()
+  @spec value(crdt :: t()) :: non_neg_integer()
   def value(%GCounter{counts: counts}) do
     counts
     |> Map.values()
@@ -182,7 +182,7 @@ defmodule Laniakea.CRDT.GCounter do
       iex> GCounter.node_value(counter, "bob")
       0
   """
-  @spec node_value(t(), node_id()) :: non_neg_integer()
+  @spec node_value(crdt :: t(), node_id :: node_id()) :: non_neg_integer()
   def node_value(%GCounter{counts: counts}, node_id) do
     Map.get(counts, node_id, 0)
   end
@@ -219,7 +219,7 @@ defmodule Laniakea.CRDT.GCounter do
       %{"alice" => 5, "bob" => 7}
   """
   @impl Laniakea.CRDT
-  @spec merge(t(), t()) :: t()
+  @spec merge(a :: t(), b :: t()) :: t()
   def merge(%GCounter{} = a, %GCounter{} = b) do
     all_nodes =
       MapSet.union(
@@ -259,7 +259,7 @@ defmodule Laniakea.CRDT.GCounter do
       %{"alice" => 5, "carol" => 1}
   """
   @impl Laniakea.CRDT
-  @spec delta(t(), t()) :: t()
+  @spec delta(older :: t(), newer :: t()) :: t()
   def delta(%GCounter{} = older, %GCounter{} = newer) do
     delta_counts =
       newer.counts
@@ -282,7 +282,7 @@ defmodule Laniakea.CRDT.GCounter do
       iex> GCounter.apply_delta(state, delta)
       %GCounter{counts: %{"alice" => 5, "bob" => 2}, version: 0}
   """
-  @spec apply_delta(t(), t()) :: t()
+  @spec apply_delta(state :: t(), delta :: t()) :: t()
   def apply_delta(%GCounter{} = state, %GCounter{} = delta) do
     merge(state, delta)
   end
@@ -303,7 +303,7 @@ defmodule Laniakea.CRDT.GCounter do
       iex> GCounter.equal?(a, b)
       true
   """
-  @spec equal?(t(), t()) :: boolean()
+  @spec equal?(crdt :: t(), crdt :: t()) :: boolean()
   def equal?(%GCounter{counts: a}, %GCounter{counts: b}) do
     a == b
   end
@@ -327,7 +327,7 @@ defmodule Laniakea.CRDT.GCounter do
       iex> GCounter.lte?(a, b)
       false  # bob's count is higher in a
   """
-  @spec lte?(t(), t()) :: boolean()
+  @spec lte?(crdt :: t(), crdt :: t()) :: boolean()
   def lte?(%GCounter{counts: a}, %GCounter{counts: b}) do
     all_nodes =
       MapSet.union(
@@ -356,7 +356,7 @@ defmodule Laniakea.CRDT.GCounter do
       %{type: "g_counter", counts: %{"node1" => 1}, version: 1, value: 1}
   """
   @impl Laniakea.CRDT
-  @spec to_map(t()) :: %{
+  @spec to_map(counter :: t()) :: %{
           required(:type) => binary(),
           required(:counts) => %{node_id() => non_neg_integer()},
           required(:version) => non_neg_integer(),
@@ -374,7 +374,7 @@ defmodule Laniakea.CRDT.GCounter do
   @doc """
   Converts the counter to its string-keyed wire representation.
   """
-  @spec to_wire(t()) :: %{
+  @spec to_wire(counter :: t()) :: %{
           required(String.t()) =>
             String.t() | non_neg_integer() | %{node_id() => non_neg_integer()}
         }
@@ -396,7 +396,7 @@ defmodule Laniakea.CRDT.GCounter do
       %GCounter{counts: %{"alice" => 3}, version: 5}
   """
   @impl Laniakea.CRDT
-  @spec from_wire(map()) :: t()
+  @spec from_wire(data :: map()) :: t()
   def from_wire(%{"counts" => counts, "version" => version}) do
     %GCounter{counts: counts, version: version}
   end
@@ -410,7 +410,9 @@ defmodule Laniakea.CRDT.GCounter do
   # ============================================================================
 
   defimpl Inspect do
-    def inspect(%Laniakea.CRDT.GCounter{counts: counts, version: v}, _opts) do
+    alias Laniakea.CRDT.GCounter
+
+    def inspect(%GCounter{counts: counts, version: v}, _opts) do
       value = counts |> Map.values() |> Enum.sum()
       "#GCounter<value=#{value}, nodes=#{map_size(counts)}, v#{v}>"
     end

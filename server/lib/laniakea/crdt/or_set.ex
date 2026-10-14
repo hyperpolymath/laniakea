@@ -62,7 +62,7 @@ defmodule Laniakea.CRDT.ORSet do
   @doc """
   Creates a new, empty OR-Set.
   """
-  @spec new() :: %ORSet{elements: %{}, tombstones: %{}, version: 0}
+  @spec new() :: t()
   def new, do: %ORSet{}
 
   # ============================================================================
@@ -80,7 +80,7 @@ defmodule Laniakea.CRDT.ORSet do
       iex> ORSet.contains?(set, "apple")
       true
   """
-  @spec add(t(), any(), node_id()) :: t()
+  @spec add(set :: t(), element :: any(), node_id :: node_id()) :: t()
   def add(%ORSet{elements: elements, version: v} = _set, element, node_id) do
     tag = %{node: node_id, ts: System.unique_integer([:monotonic, :positive])}
     existing_tags = Map.get(elements, element, MapSet.new())
@@ -106,7 +106,7 @@ defmodule Laniakea.CRDT.ORSet do
       iex> ORSet.contains?(set, "apple")
       false
   """
-  @spec remove(t(), any()) :: t()
+  @spec remove(set :: t(), element :: any()) :: t()
   def remove(%ORSet{elements: elements, tombstones: tombstones, version: v} = _set, element) do
     observed_tags = Map.get(elements, element, MapSet.new())
 
@@ -126,7 +126,7 @@ defmodule Laniakea.CRDT.ORSet do
   Returns all elements in the set.
   """
   @impl Laniakea.CRDT
-  @spec value(t()) :: list()
+  @spec value(crdt :: t()) :: list()
   def value(%ORSet{elements: elements, tombstones: tombstones}) do
     elements
     |> Map.keys()
@@ -140,7 +140,7 @@ defmodule Laniakea.CRDT.ORSet do
   @doc """
   Alias for value/1 - returns all elements.
   """
-  @spec elements(t()) :: list()
+  @spec elements(set :: t()) :: list()
   def elements(%ORSet{} = set), do: value(set)
 
   @doc """
@@ -154,7 +154,7 @@ defmodule Laniakea.CRDT.ORSet do
       iex> ORSet.contains?(set, "banana")
       false
   """
-  @spec contains?(t(), any()) :: boolean()
+  @spec contains?(crdt :: t(), element :: any()) :: boolean()
   def contains?(%ORSet{elements: elements, tombstones: tombstones}, element) do
     elements
     |> Map.get(element, MapSet.new())
@@ -166,13 +166,13 @@ defmodule Laniakea.CRDT.ORSet do
   @doc """
   Compatibility alias for `contains?/2`.
   """
-  @spec member?(t(), any()) :: boolean()
+  @spec member?(set :: t(), element :: any()) :: boolean()
   def member?(%ORSet{} = set, element), do: contains?(set, element)
 
   @doc """
   Returns the number of elements in the set.
   """
-  @spec size(t()) :: non_neg_integer()
+  @spec size(set :: t()) :: non_neg_integer()
   def size(%ORSet{} = set) do
     length(value(set))
   end
@@ -188,7 +188,7 @@ defmodule Laniakea.CRDT.ORSet do
   An element is present if it has any tags after merge.
   """
   @impl Laniakea.CRDT
-  @spec merge(t(), t()) :: t()
+  @spec merge(a :: t(), b :: t()) :: t()
   def merge(%ORSet{} = a, %ORSet{} = b) do
     %ORSet{
       elements: merge_tag_maps(a.elements, b.elements),
@@ -205,7 +205,7 @@ defmodule Laniakea.CRDT.ORSet do
   Computes the delta between two OR-Set states.
   """
   @impl Laniakea.CRDT
-  @spec delta(t(), t()) :: t()
+  @spec delta(older :: t(), newer :: t()) :: t()
   def delta(%ORSet{} = older, %ORSet{} = newer) do
     %ORSet{
       elements: tag_map_delta(older.elements, newer.elements),
@@ -219,7 +219,7 @@ defmodule Laniakea.CRDT.ORSet do
   # ============================================================================
 
   @impl Laniakea.CRDT
-  @spec to_map(t()) :: map()
+  @spec to_map(set :: t()) :: map()
   def to_map(%ORSet{elements: elements, tombstones: tombstones, version: v} = set) do
     %{
       type: "or_set",
@@ -233,7 +233,7 @@ defmodule Laniakea.CRDT.ORSet do
   @doc """
   Converts the set to its string-keyed wire representation.
   """
-  @spec to_wire(t()) :: map()
+  @spec to_wire(set :: t()) :: map()
   def to_wire(%ORSet{elements: elements, tombstones: tombstones, version: version} = set) do
     %{
       "type" => "or_set",
@@ -245,7 +245,7 @@ defmodule Laniakea.CRDT.ORSet do
   end
 
   @impl Laniakea.CRDT
-  @spec from_wire(map()) :: t()
+  @spec from_wire(data :: map()) :: t()
   def from_wire(%{"elements" => elements} = data) do
     %ORSet{
       elements: deserialize_tag_map(elements),
@@ -295,8 +295,10 @@ defmodule Laniakea.CRDT.ORSet do
   end
 
   defimpl Inspect do
-    def inspect(%Laniakea.CRDT.ORSet{} = set, _opts) do
-      elements = Laniakea.CRDT.ORSet.elements(set)
+    alias Laniakea.CRDT.ORSet
+
+    def inspect(%ORSet{} = set, _opts) do
+      elements = ORSet.elements(set)
       count = length(elements)
       preview = elements |> Enum.take(3) |> inspect()
       "#ORSet<#{count} elements, #{preview}, v#{set.version}>"

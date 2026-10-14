@@ -57,13 +57,13 @@ defmodule Laniakea.CRDT.LWWRegister do
   @doc """
   Creates a new, empty LWW-Register.
   """
-  @spec new() :: %LWWRegister{value: nil, timestamp: 0, node_id: nil, version: 0}
+  @spec new() :: t()
   def new, do: %LWWRegister{}
 
   @doc """
   Creates a LWW-Register with an initial value.
   """
-  @spec new(any(), node_id()) :: t()
+  @spec new(value :: any(), node_id :: node_id()) :: t()
   def new(value, node_id) do
     %LWWRegister{
       value: value,
@@ -88,7 +88,7 @@ defmodule Laniakea.CRDT.LWWRegister do
       iex> LWWRegister.value(reg)
       "hello"
   """
-  @spec set(t(), any(), node_id()) :: t()
+  @spec set(reg :: t(), value :: any(), node_id :: node_id()) :: t()
   def set(%LWWRegister{version: v} = _reg, value, node_id) do
     %LWWRegister{
       value: value,
@@ -103,7 +103,12 @@ defmodule Laniakea.CRDT.LWWRegister do
 
   Useful for deterministic testing or when you have external timestamps.
   """
-  @spec set_with_timestamp(t(), any(), node_id(), integer()) :: t()
+  @spec set_with_timestamp(
+          reg :: t(),
+          value :: any(),
+          node_id :: node_id(),
+          timestamp :: integer()
+        ) :: t()
   def set_with_timestamp(%LWWRegister{version: v} = _reg, value, node_id, timestamp) do
     %LWWRegister{
       value: value,
@@ -127,19 +132,19 @@ defmodule Laniakea.CRDT.LWWRegister do
       "hello"
   """
   @impl Laniakea.CRDT
-  @spec value(t()) :: any()
+  @spec value(crdt :: t()) :: any()
   def value(%LWWRegister{value: v}), do: v
 
   @doc """
   Returns the timestamp of the current value.
   """
-  @spec timestamp(t()) :: integer()
+  @spec timestamp(crdt :: t()) :: integer()
   def timestamp(%LWWRegister{timestamp: ts}), do: ts
 
   @doc """
   Returns the node that set the current value.
   """
-  @spec node_id(t()) :: node_id() | nil
+  @spec node_id(crdt :: t()) :: node_id() | nil
   def node_id(%LWWRegister{node_id: n}), do: n
 
   # ============================================================================
@@ -161,7 +166,7 @@ defmodule Laniakea.CRDT.LWWRegister do
       "b"  # b has higher timestamp
   """
   @impl Laniakea.CRDT
-  @spec merge(t(), t()) :: t()
+  @spec merge(a :: t(), b :: t()) :: t()
   def merge(%LWWRegister{} = a, %LWWRegister{} = b) do
     winner = compare_and_select(a, b)
     %LWWRegister{winner | version: max(a.version, b.version)}
@@ -188,7 +193,7 @@ defmodule Laniakea.CRDT.LWWRegister do
   actually newer, otherwise empty.
   """
   @impl Laniakea.CRDT
-  @spec delta(t(), t()) :: t()
+  @spec delta(older :: t(), newer :: t()) :: t()
   def delta(%LWWRegister{} = older, %LWWRegister{} = newer) do
     if newer.timestamp > older.timestamp do
       newer
@@ -202,7 +207,7 @@ defmodule Laniakea.CRDT.LWWRegister do
   # ============================================================================
 
   @impl Laniakea.CRDT
-  @spec to_map(t()) :: map()
+  @spec to_map(crdt :: t()) :: map()
   def to_map(%LWWRegister{value: v, timestamp: ts, node_id: n, version: ver}) do
     %{
       type: "lww_register",
@@ -216,7 +221,7 @@ defmodule Laniakea.CRDT.LWWRegister do
   @doc """
   Converts the register to its string-keyed wire representation.
   """
-  @spec to_wire(t()) :: map()
+  @spec to_wire(crdt :: t()) :: map()
   def to_wire(%LWWRegister{value: value, timestamp: timestamp, node_id: node_id, version: version}) do
     %{
       "type" => "lww_register",
@@ -228,7 +233,7 @@ defmodule Laniakea.CRDT.LWWRegister do
   end
 
   @impl Laniakea.CRDT
-  @spec from_wire(map()) :: t()
+  @spec from_wire(data :: map()) :: t()
   def from_wire(%{"value" => v, "timestamp" => ts, "node_id" => n} = data) do
     %LWWRegister{
       value: v,
@@ -248,8 +253,10 @@ defmodule Laniakea.CRDT.LWWRegister do
   end
 
   defimpl Inspect do
+    alias Laniakea.CRDT.LWWRegister
+
     def inspect(
-          %Laniakea.CRDT.LWWRegister{value: v, timestamp: ts, node_id: n, version: ver},
+          %LWWRegister{value: v, timestamp: ts, node_id: n, version: ver},
           _opts
         ) do
       "#LWWRegister<#{inspect(v)}, ts=#{ts}, node=#{n || "nil"}, v#{ver}>"

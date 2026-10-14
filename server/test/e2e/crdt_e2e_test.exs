@@ -9,9 +9,9 @@ defmodule Laniakea.CRDT.E2ETest do
   use ExUnit.Case, async: true
 
   alias Laniakea.CRDT.GCounter
-  alias Laniakea.CRDT.PNCounter
-  alias Laniakea.CRDT.ORSet
   alias Laniakea.CRDT.LWWRegister
+  alias Laniakea.CRDT.ORSet
+  alias Laniakea.CRDT.PNCounter
 
   @moduletag :e2e
 

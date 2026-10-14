@@ -34,7 +34,7 @@ defmodule LaniakeaWeb.CRDTChannel do
   use Phoenix.Channel
   require Logger
 
-  alias Laniakea.CRDT.{GCounter, PNCounter, ORSet, LWWRegister, Registry}
+  alias Laniakea.CRDT.{GCounter, LWWRegister, ORSet, PNCounter, Registry}
   alias Laniakea.Policy.Engine, as: Policy
 
   @impl true
