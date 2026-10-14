@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0 OR Apache-2.0
 // Copyright (c) 2024 Laniakea Contributors
 
-import { assertEquals, assertThrows } from "https://deno.land/std@0.208.0/assert/mod.ts";
+import { assertEquals } from "https://deno.land/std@0.208.0/assert/mod.ts";
 
 // Note: These tests assume ReScript has been compiled to .mjs files
 // Run `npx rescript` before running tests
@@ -41,8 +41,8 @@ Deno.test("GCounter - merge operations", async (t) => {
   const GCounter = await import("../src/crdt/GCounter.mjs");
 
   await t.step("merge is commutative", () => {
-    let a = GCounter.incrementBy(GCounter.make(), "a", 5);
-    let b = GCounter.incrementBy(GCounter.make(), "b", 3);
+    const a = GCounter.incrementBy(GCounter.make(), "a", 5);
+    const b = GCounter.incrementBy(GCounter.make(), "b", 3);
 
     const ab = GCounter.merge(a, b);
     const ba = GCounter.merge(b, a);
@@ -51,9 +51,9 @@ Deno.test("GCounter - merge operations", async (t) => {
   });
 
   await t.step("merge is associative", () => {
-    let a = GCounter.incrementBy(GCounter.make(), "a", 1);
-    let b = GCounter.incrementBy(GCounter.make(), "b", 2);
-    let c = GCounter.incrementBy(GCounter.make(), "c", 3);
+    const a = GCounter.incrementBy(GCounter.make(), "a", 1);
+    const b = GCounter.incrementBy(GCounter.make(), "b", 2);
+    const c = GCounter.incrementBy(GCounter.make(), "c", 3);
 
     const left = GCounter.merge(GCounter.merge(a, b), c);
     const right = GCounter.merge(a, GCounter.merge(b, c));
@@ -62,7 +62,7 @@ Deno.test("GCounter - merge operations", async (t) => {
   });
 
   await t.step("merge is idempotent", () => {
-    let a = GCounter.incrementBy(GCounter.make(), "a", 5);
+    const a = GCounter.incrementBy(GCounter.make(), "a", 5);
     assertEquals(GCounter.value(GCounter.merge(a, a)), GCounter.value(a));
   });
 
@@ -118,8 +118,8 @@ Deno.test("PNCounter - merge operations", async (t) => {
   const PNCounter = await import("../src/crdt/PNCounter.mjs");
 
   await t.step("merge is commutative", () => {
-    let a = PNCounter.incrementBy(PNCounter.make(), "a", 5);
-    let b = PNCounter.decrementBy(PNCounter.make(), "b", 3);
+    const a = PNCounter.incrementBy(PNCounter.make(), "a", 5);
+    const b = PNCounter.decrementBy(PNCounter.make(), "b", 3);
 
     const ab = PNCounter.merge(a, b);
     const ba = PNCounter.merge(b, a);
@@ -167,8 +167,8 @@ Deno.test("ORSet - merge operations", async (t) => {
   const ORSet = await import("../src/crdt/ORSet.mjs");
 
   await t.step("merge combines elements", () => {
-    let a = ORSet.add(ORSet.make(), "apple", "node1");
-    let b = ORSet.add(ORSet.make(), "banana", "node2");
+    const a = ORSet.add(ORSet.make(), "apple", "node1");
+    const b = ORSet.add(ORSet.make(), "banana", "node2");
 
     const merged = ORSet.merge(a, b);
 
@@ -177,8 +177,8 @@ Deno.test("ORSet - merge operations", async (t) => {
   });
 
   await t.step("merge is commutative", () => {
-    let a = ORSet.add(ORSet.make(), "x", "a");
-    let b = ORSet.add(ORSet.make(), "y", "b");
+    const a = ORSet.add(ORSet.make(), "x", "a");
+    const b = ORSet.add(ORSet.make(), "y", "b");
 
     const ab = ORSet.merge(a, b);
     const ba = ORSet.merge(b, a);
@@ -216,16 +216,26 @@ Deno.test("LWWRegister - merge operations", async (t) => {
   const LWWRegister = await import("../src/crdt/LWWRegister.mjs");
 
   await t.step("keeps higher timestamp value", () => {
-    let a = LWWRegister.setWithTimestamp(LWWRegister.make(), "older", "n1", 100);
-    let b = LWWRegister.setWithTimestamp(LWWRegister.make(), "newer", "n2", 200);
+    const a = LWWRegister.setWithTimestamp(
+      LWWRegister.make(),
+      "older",
+      "n1",
+      100,
+    );
+    const b = LWWRegister.setWithTimestamp(
+      LWWRegister.make(),
+      "newer",
+      "n2",
+      200,
+    );
 
     const merged = LWWRegister.merge(a, b);
     assertEquals(LWWRegister.value(merged), "newer");
   });
 
   await t.step("merge is commutative", () => {
-    let a = LWWRegister.setWithTimestamp(LWWRegister.make(), "a", "n1", 100);
-    let b = LWWRegister.setWithTimestamp(LWWRegister.make(), "b", "n2", 200);
+    const a = LWWRegister.setWithTimestamp(LWWRegister.make(), "a", "n1", 100);
+    const b = LWWRegister.setWithTimestamp(LWWRegister.make(), "b", "n2", 200);
 
     const ab = LWWRegister.merge(a, b);
     const ba = LWWRegister.merge(b, a);
@@ -234,8 +244,18 @@ Deno.test("LWWRegister - merge operations", async (t) => {
   });
 
   await t.step("uses node_id as tiebreaker", () => {
-    let a = LWWRegister.setWithTimestamp(LWWRegister.make(), "a_value", "node_a", 100);
-    let b = LWWRegister.setWithTimestamp(LWWRegister.make(), "b_value", "node_b", 100);
+    const a = LWWRegister.setWithTimestamp(
+      LWWRegister.make(),
+      "a_value",
+      "node_a",
+      100,
+    );
+    const b = LWWRegister.setWithTimestamp(
+      LWWRegister.make(),
+      "b_value",
+      "node_b",
+      100,
+    );
 
     const ab = LWWRegister.merge(a, b);
     const ba = LWWRegister.merge(b, a);
@@ -249,7 +269,12 @@ Deno.test("LWWRegister - wire format", async (t) => {
   const LWWRegister = await import("../src/crdt/LWWRegister.mjs");
 
   await t.step("round-trips through wire format", () => {
-    let reg = LWWRegister.setWithTimestamp(LWWRegister.make(), "test", "node1", 12345);
+    const reg = LWWRegister.setWithTimestamp(
+      LWWRegister.make(),
+      "test",
+      "node1",
+      12345,
+    );
 
     const wire = LWWRegister.toWire(reg);
     const restored = LWWRegister.fromWire(wire);

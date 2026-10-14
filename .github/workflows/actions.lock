@@ -26,22 +26,22 @@ workflows:
         - 'hyperpolymath/deed-ecosystem@main'
         - 'hyperpolymath/k9-ecosystem@main'
     '.github/workflows/governance.yml':
-        - 'hyperpolymath/standards@8f2ee50841e216cd8c192eeb68953118190f105c'
+        - 'hyperpolymath/standards@80014df42eb81f09396c948299febb258cec4719'
     '.github/workflows/hypatia-scan.yml':
-        - 'hyperpolymath/standards@8f2ee50841e216cd8c192eeb68953118190f105c'
+        - 'hyperpolymath/standards@80014df42eb81f09396c948299febb258cec4719'
     '.github/workflows/instant-sync.yml':
         - 'peter-evans/repository-dispatch@v4.0.1'
     '.github/workflows/label-triage.yml': []
     '.github/workflows/labels.yml': []
     '.github/workflows/lock-sync-gate.yml': []
     '.github/workflows/mirror.yml':
-        - 'hyperpolymath/standards@8f2ee50841e216cd8c192eeb68953118190f105c'
+        - 'hyperpolymath/standards@80014df42eb81f09396c948299febb258cec4719'
     '.github/workflows/push-email-notify.yml':
         - 'hyperpolymath/smtp-notify-action@v0.5.0'
     '.github/workflows/scorecard.yml':
-        - 'hyperpolymath/standards@8f2ee50841e216cd8c192eeb68953118190f105c'
+        - 'hyperpolymath/standards@80014df42eb81f09396c948299febb258cec4719'
     '.github/workflows/secret-scanner.yml':
-        - 'hyperpolymath/standards@8f2ee50841e216cd8c192eeb68953118190f105c'
+        - 'hyperpolymath/standards@80014df42eb81f09396c948299febb258cec4719'
     '.github/workflows/workflow-linter.yml':
         - 'actions/checkout@v7.0.1'
 dependencies:
@@ -85,6 +85,11 @@ dependencies:
         commit: 'sha1-bbbca2ddaa5d8feaa63e36b76fdaad77386f024f'
         owner_id: 44036562
         repo_id: 192625955
+    'actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9':
+        ref: 'cf430e030ddbb5b0abf93d22962f4752f3646cd9'
+        commit: 'sha1-cf430e030ddbb5b0abf93d22962f4752f3646cd9'
+        owner_id: 44036562
+        repo_id: 192625955
     'actions/upload-artifact@v7.0.2':
         ref: 'v7.0.2'
         commit: 'sha1-cf430e030ddbb5b0abf93d22962f4752f3646cd9'
@@ -97,6 +102,11 @@ dependencies:
         repo_id: 496012378
         uses:
             - 'actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f'
+    'denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed':
+        ref: '22d081ff2d3a40755e97629de92e3bcbfa7cf2ed'
+        commit: 'sha1-22d081ff2d3a40755e97629de92e3bcbfa7cf2ed'
+        owner_id: 42048915
+        repo_id: 356423100
     'denoland/setup-deno@v2.0.5':
         ref: 'v2.0.5'
         commit: 'sha1-22d081ff2d3a40755e97629de92e3bcbfa7cf2ed'
@@ -105,6 +115,11 @@ dependencies:
     'dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772':
         ref: '6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772'
         commit: 'sha1-6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772'
+        owner_id: 1940490
+        repo_id: 260749683
+    'dtolnay/rust-toolchain@e2a55d2ffb04f378e9626c28d38b36d230d1e12f':
+        ref: 'e2a55d2ffb04f378e9626c28d38b36d230d1e12f'
+        commit: 'sha1-e2a55d2ffb04f378e9626c28d38b36d230d1e12f'
         owner_id: 1940490
         repo_id: 260749683
     'editorconfig-checker/action-editorconfig-checker@51f63319f592f97930c73d9c46184d20bd206393':
@@ -125,6 +140,11 @@ dependencies:
     'github/codeql-action@24c54180a607b1449ed407dd24f251e4e9147c8d':
         ref: 'v4.38.3'
         commit: 'sha1-24c54180a607b1449ed407dd24f251e4e9147c8d'
+        owner_id: 9919
+        repo_id: 259445878
+    'github/codeql-action@b96794f015dfd88f77b49b1c93e0fa7110f94c63':
+        ref: 'b96794f015dfd88f77b49b1c93e0fa7110f94c63'
+        commit: 'sha1-b96794f015dfd88f77b49b1c93e0fa7110f94c63'
         owner_id: 9919
         repo_id: 259445878
     'github/codeql-action@cdf488f595d80d6e07e03d4674febd5ab45fa938':
@@ -152,26 +172,33 @@ dependencies:
         commit: 'sha1-c1c9fa07992a02c1fd3d67a0dc1b08cccb852aef'
         owner_id: 6759885
         repo_id: 1352485172
-    'hyperpolymath/standards@8f2ee50841e216cd8c192eeb68953118190f105c':
-        ref: '8f2ee50841e216cd8c192eeb68953118190f105c'
-        commit: 'sha1-8f2ee50841e216cd8c192eeb68953118190f105c'
+    'hyperpolymath/standards@80014df42eb81f09396c948299febb258cec4719':
+        ref: '80014df42eb81f09396c948299febb258cec4719'
+        commit: 'sha1-80014df42eb81f09396c948299febb258cec4719'
         owner_id: 6759885
         repo_id: 1116521501
         uses:
             - 'actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9'
             - 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1'
-            - 'actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a'
-            - 'dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772'
+            - 'actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9'
+            - 'denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed'
+            - 'dtolnay/rust-toolchain@e2a55d2ffb04f378e9626c28d38b36d230d1e12f'
             - 'editorconfig-checker/action-editorconfig-checker@51f63319f592f97930c73d9c46184d20bd206393'
             - 'erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124'
-            - 'github/codeql-action@cdf488f595d80d6e07e03d4674febd5ab45fa938'
+            - 'github/codeql-action@b96794f015dfd88f77b49b1c93e0fa7110f94c63'
             - 'ossf/scorecard-action@2d1146689b8cda280b9bc96326124645441f03bc'
+            - 'oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6'
             - 'webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555'
     'ossf/scorecard-action@2d1146689b8cda280b9bc96326124645441f03bc':
         ref: '2d1146689b8cda280b9bc96326124645441f03bc'
         commit: 'sha1-2d1146689b8cda280b9bc96326124645441f03bc'
         owner_id: 67707773
         repo_id: 421101922
+    'oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6':
+        ref: '0c5077e51419868618aeaa5fe8019c62421857d6'
+        commit: 'sha1-0c5077e51419868618aeaa5fe8019c62421857d6'
+        owner_id: 108928776
+        repo_id: 512644635
     'peter-evans/repository-dispatch@v4.0.1':
         ref: 'v4.0.1'
         commit: 'sha1-28959ce8df70de7be546dd1250a005dd32156697'

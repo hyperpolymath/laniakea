@@ -1,0 +1,11 @@
+{
+  "fmt": {
+    "exclude": ["lib/", "src/"]
+  },
+  "lint": {
+    "exclude": ["lib/", "src/"]
+  },
+  "test": {
+    "exclude": ["lib/", "src/"]
+  }
+}
