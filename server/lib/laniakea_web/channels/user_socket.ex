@@ -3,6 +3,8 @@
 
 defmodule LaniakeaWeb.UserSocket do
   use Phoenix.Socket
+
+  alias Laniakea.Policy.Engine
   require Logger
 
   # Channel routes
@@ -14,8 +16,8 @@ defmodule LaniakeaWeb.UserSocket do
     parsed_caps = parse_capabilities(capabilities)
 
     # Assign profile
-    profile = Laniakea.Policy.Engine.assign_profile(parsed_caps)
-    {:ok, _} = Laniakea.Policy.Engine.register_client(node_id, parsed_caps)
+    profile = Engine.assign_profile(parsed_caps)
+    {:ok, _} = Engine.register_client(node_id, parsed_caps)
 
     Logger.info("[UserSocket] Connected: #{node_id} with profile #{profile}")
 

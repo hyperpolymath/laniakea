@@ -10,9 +10,9 @@ defmodule Laniakea.CRDT.PropertyTest do
   use ExUnitProperties
 
   alias Laniakea.CRDT.GCounter
-  alias Laniakea.CRDT.PNCounter
-  alias Laniakea.CRDT.ORSet
   alias Laniakea.CRDT.LWWRegister
+  alias Laniakea.CRDT.ORSet
+  alias Laniakea.CRDT.PNCounter
 
   # ---------------------------------------------------------------------------
   # Generators

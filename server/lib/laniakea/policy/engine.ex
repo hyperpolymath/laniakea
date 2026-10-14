@@ -96,7 +96,7 @@ defmodule Laniakea.Policy.Engine do
       iex> Policy.Engine.assign_profile(caps)
       :full
   """
-  @spec assign_profile(capabilities()) :: profile()
+  @spec assign_profile(capabilities :: capabilities()) :: profile()
   def assign_profile(capabilities) do
     cond do
       full_client?(capabilities) -> :full
@@ -108,7 +108,7 @@ defmodule Laniakea.Policy.Engine do
   @doc """
   Gets the configuration for a profile.
   """
-  @spec get_profile_config(profile()) :: profile_config()
+  @spec get_profile_config(profile :: profile()) :: profile_config()
   def get_profile_config(profile) do
     Map.get(@profiles, profile, @profiles.minimal)
   end
@@ -116,7 +116,7 @@ defmodule Laniakea.Policy.Engine do
   @doc """
   Registers a client with their capabilities.
   """
-  @spec register_client(node_id(), capabilities()) :: {:ok, profile()}
+  @spec register_client(node_id :: node_id(), capabilities :: capabilities()) :: {:ok, profile()}
   def register_client(node_id, capabilities) do
     GenServer.call(__MODULE__, {:register, node_id, capabilities})
   end
@@ -124,7 +124,7 @@ defmodule Laniakea.Policy.Engine do
   @doc """
   Gets the profile for a registered client.
   """
-  @spec get_client_profile(node_id()) :: {:ok, profile()} | {:error, :not_found}
+  @spec get_client_profile(node_id :: node_id()) :: {:ok, profile()} | {:error, :not_found}
   def get_client_profile(node_id) do
     GenServer.call(__MODULE__, {:get_profile, node_id})
   end
@@ -132,7 +132,8 @@ defmodule Laniakea.Policy.Engine do
   @doc """
   Updates a client's capabilities (e.g., network change).
   """
-  @spec update_capabilities(node_id(), capabilities()) :: {:ok, profile()}
+  @spec update_capabilities(node_id :: node_id(), capabilities :: capabilities()) ::
+          {:ok, profile()}
   def update_capabilities(node_id, capabilities) do
     GenServer.call(__MODULE__, {:update, node_id, capabilities})
   end
@@ -140,7 +141,7 @@ defmodule Laniakea.Policy.Engine do
   @doc """
   Unregisters a client.
   """
-  @spec unregister_client(node_id()) :: :ok
+  @spec unregister_client(node_id :: node_id()) :: :ok
   def unregister_client(node_id) do
     GenServer.cast(__MODULE__, {:unregister, node_id})
   end

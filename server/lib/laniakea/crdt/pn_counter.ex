@@ -78,7 +78,7 @@ defmodule Laniakea.CRDT.PNCounter do
       iex> PNCounter.value(counter)
       1
   """
-  @spec increment(t(), node_id()) :: t()
+  @spec increment(counter :: t(), node_id :: node_id()) :: t()
   def increment(%PNCounter{positive: pos, version: v} = counter, node_id) do
     %PNCounter{
       counter
@@ -92,14 +92,14 @@ defmodule Laniakea.CRDT.PNCounter do
 
   This is a compatibility alias for `increment_by/3`.
   """
-  @spec increment(t(), node_id(), non_neg_integer()) :: t()
+  @spec increment(counter :: t(), node_id :: node_id(), amount :: non_neg_integer()) :: t()
   def increment(%PNCounter{} = counter, node_id, amount),
     do: increment_by(counter, node_id, amount)
 
   @doc """
   Increments the counter by a specific amount.
   """
-  @spec increment_by(t(), node_id(), non_neg_integer()) :: t()
+  @spec increment_by(counter :: t(), node_id :: node_id(), amount :: non_neg_integer()) :: t()
   def increment_by(%PNCounter{positive: pos, version: v} = counter, node_id, amount) do
     %PNCounter{
       counter
@@ -120,7 +120,7 @@ defmodule Laniakea.CRDT.PNCounter do
       iex> PNCounter.value(counter)
       1
   """
-  @spec decrement(t(), node_id()) :: t()
+  @spec decrement(counter :: t(), node_id :: node_id()) :: t()
   def decrement(%PNCounter{negative: neg, version: v} = counter, node_id) do
     %PNCounter{
       counter
@@ -134,14 +134,14 @@ defmodule Laniakea.CRDT.PNCounter do
 
   This is a compatibility alias for `decrement_by/3`.
   """
-  @spec decrement(t(), node_id(), non_neg_integer()) :: t()
+  @spec decrement(counter :: t(), node_id :: node_id(), amount :: non_neg_integer()) :: t()
   def decrement(%PNCounter{} = counter, node_id, amount),
     do: decrement_by(counter, node_id, amount)
 
   @doc """
   Decrements the counter by a specific amount.
   """
-  @spec decrement_by(t(), node_id(), non_neg_integer()) :: t()
+  @spec decrement_by(counter :: t(), node_id :: node_id(), amount :: non_neg_integer()) :: t()
   def decrement_by(%PNCounter{negative: neg, version: v} = counter, node_id, amount) do
     %PNCounter{
       counter
@@ -167,7 +167,7 @@ defmodule Laniakea.CRDT.PNCounter do
       -1
   """
   @impl Laniakea.CRDT
-  @spec value(t()) :: integer()
+  @spec value(crdt :: t()) :: integer()
   def value(%PNCounter{positive: pos, negative: neg}) do
     GCounter.value(pos) - GCounter.value(neg)
   end
@@ -175,7 +175,7 @@ defmodule Laniakea.CRDT.PNCounter do
   @doc """
   Returns the positive count only.
   """
-  @spec positive_value(t()) :: non_neg_integer()
+  @spec positive_value(crdt :: t()) :: non_neg_integer()
   def positive_value(%PNCounter{positive: pos}) do
     GCounter.value(pos)
   end
@@ -183,7 +183,7 @@ defmodule Laniakea.CRDT.PNCounter do
   @doc """
   Returns the negative count only.
   """
-  @spec negative_value(t()) :: non_neg_integer()
+  @spec negative_value(crdt :: t()) :: non_neg_integer()
   def negative_value(%PNCounter{negative: neg}) do
     GCounter.value(neg)
   end
@@ -198,7 +198,7 @@ defmodule Laniakea.CRDT.PNCounter do
   Merges the positive and negative G-Counters independently.
   """
   @impl Laniakea.CRDT
-  @spec merge(t(), t()) :: t()
+  @spec merge(a :: t(), b :: t()) :: t()
   def merge(%PNCounter{} = a, %PNCounter{} = b) do
     %PNCounter{
       positive: GCounter.merge(a.positive, b.positive),
@@ -215,7 +215,7 @@ defmodule Laniakea.CRDT.PNCounter do
   Computes the delta between two PN-Counter states.
   """
   @impl Laniakea.CRDT
-  @spec delta(t(), t()) :: t()
+  @spec delta(older :: t(), newer :: t()) :: t()
   def delta(%PNCounter{} = older, %PNCounter{} = newer) do
     %PNCounter{
       positive: GCounter.delta(older.positive, newer.positive),
@@ -229,7 +229,7 @@ defmodule Laniakea.CRDT.PNCounter do
   # ============================================================================
 
   @impl Laniakea.CRDT
-  @spec to_map(t()) :: %{
+  @spec to_map(counter :: t()) :: %{
           required(:type) => binary(),
           required(:positive) => %{node_id() => non_neg_integer()},
           required(:negative) => %{node_id() => non_neg_integer()},
@@ -249,7 +249,7 @@ defmodule Laniakea.CRDT.PNCounter do
   @doc """
   Converts the counter to its string-keyed wire representation.
   """
-  @spec to_wire(t()) :: %{
+  @spec to_wire(counter :: t()) :: %{
           required(String.t()) => String.t() | integer() | %{node_id() => non_neg_integer()}
         }
   def to_wire(%PNCounter{positive: pos, negative: neg, version: version} = counter) do
@@ -263,7 +263,7 @@ defmodule Laniakea.CRDT.PNCounter do
   end
 
   @impl Laniakea.CRDT
-  @spec from_wire(map()) :: t()
+  @spec from_wire(data :: map()) :: t()
   def from_wire(%{"positive" => pos, "negative" => neg} = data) do
     %PNCounter{
       positive: GCounter.from_map(pos),
@@ -273,10 +273,12 @@ defmodule Laniakea.CRDT.PNCounter do
   end
 
   defimpl Inspect do
-    def inspect(%Laniakea.CRDT.PNCounter{} = pn, _opts) do
-      value = Laniakea.CRDT.PNCounter.value(pn)
-      pos = Laniakea.CRDT.PNCounter.positive_value(pn)
-      neg = Laniakea.CRDT.PNCounter.negative_value(pn)
+    alias Laniakea.CRDT.PNCounter
+
+    def inspect(%PNCounter{} = pn, _opts) do
+      value = PNCounter.value(pn)
+      pos = PNCounter.positive_value(pn)
+      neg = PNCounter.negative_value(pn)
       "#PNCounter<value=#{value}, +#{pos}/-#{neg}, v#{pn.version}>"
     end
   end

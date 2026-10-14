@@ -45,19 +45,21 @@ defmodule Laniakea.CRDT do
       GCounter.value(merged)  # => 3
   """
 
+  alias Laniakea.CRDT.{GCounter, LWWRegister, ORSet, PNCounter}
+
   @type crdt :: struct()
   @type node_id :: String.t()
   @type supported_crdt_module ::
-          Laniakea.CRDT.GCounter
-          | Laniakea.CRDT.PNCounter
-          | Laniakea.CRDT.ORSet
-          | Laniakea.CRDT.LWWRegister
+          GCounter
+          | PNCounter
+          | ORSet
+          | LWWRegister
   @type verification_error :: :commutativity_failed | :associativity_failed | :idempotence_failed
 
   @doc """
   Returns the current value of the CRDT.
   """
-  @callback value(crdt()) :: any()
+  @callback value(crdt :: crdt()) :: any()
 
   @doc """
   Merges two CRDT instances.
@@ -67,7 +69,7 @@ defmodule Laniakea.CRDT do
   - Associativity: merge(merge(a, b), c) == merge(a, merge(b, c))
   - Idempotence: merge(a, a) == a
   """
-  @callback merge(crdt(), crdt()) :: crdt()
+  @callback merge(a :: crdt(), b :: crdt()) :: crdt()
 
   @doc """
   Computes the delta between two states.
@@ -80,12 +82,12 @@ defmodule Laniakea.CRDT do
   @doc """
   Serializes the CRDT to a map for wire transmission.
   """
-  @callback to_map(crdt()) :: map()
+  @callback to_map(crdt :: crdt()) :: map()
 
   @doc """
   Deserializes a CRDT from wire format.
   """
-  @callback from_wire(map()) :: crdt()
+  @callback from_wire(data :: map()) :: crdt()
 
   @optional_callbacks [delta: 2]
 
@@ -99,16 +101,16 @@ defmodule Laniakea.CRDT do
   ## Examples
 
       iex> Laniakea.CRDT.type_from_wire(%{"type" => "g_counter"})
-      {:ok, Laniakea.CRDT.GCounter}
+      {:ok, GCounter}
 
       iex> Laniakea.CRDT.type_from_wire(%{"type" => "unknown"})
       {:error, :unknown_type}
   """
-  @spec type_from_wire(map()) :: {:ok, module()} | {:error, :unknown_type}
-  def type_from_wire(%{"type" => "g_counter"}), do: {:ok, Laniakea.CRDT.GCounter}
-  def type_from_wire(%{"type" => "pn_counter"}), do: {:ok, Laniakea.CRDT.PNCounter}
-  def type_from_wire(%{"type" => "or_set"}), do: {:ok, Laniakea.CRDT.ORSet}
-  def type_from_wire(%{"type" => "lww_register"}), do: {:ok, Laniakea.CRDT.LWWRegister}
+  @spec type_from_wire(data :: map()) :: {:ok, module()} | {:error, :unknown_type}
+  def type_from_wire(%{"type" => "g_counter"}), do: {:ok, GCounter}
+  def type_from_wire(%{"type" => "pn_counter"}), do: {:ok, PNCounter}
+  def type_from_wire(%{"type" => "or_set"}), do: {:ok, ORSet}
+  def type_from_wire(%{"type" => "lww_register"}), do: {:ok, LWWRegister}
   def type_from_wire(_), do: {:error, :unknown_type}
 
   @doc """
@@ -119,7 +121,7 @@ defmodule Laniakea.CRDT do
       iex> Laniakea.CRDT.from_wire(%{"type" => "g_counter", "counts" => %{"a" => 1}})
       {:ok, %Laniakea.CRDT.GCounter{counts: %{"a" => 1}}}
   """
-  @spec from_wire(map()) :: {:ok, crdt()} | {:error, :unknown_type}
+  @spec from_wire(data :: map()) :: {:ok, crdt()} | {:error, :unknown_type}
   def from_wire(data) do
     case type_from_wire(data) do
       {:ok, module} -> {:ok, module.from_wire(data)}
@@ -141,13 +143,12 @@ defmodule Laniakea.CRDT do
       iex> Laniakea.CRDT.verify(Laniakea.CRDT.GCounter)
       :ok
   """
-  @spec verify(supported_crdt_module()) ::
+  @spec verify(module :: supported_crdt_module()) ::
           :ok | {:error, {verification_error(), supported_crdt_module()}}
   def verify(module) do
     with :ok <- verify_commutativity(module),
-         :ok <- verify_associativity(module),
-         :ok <- verify_idempotence(module) do
-      :ok
+         :ok <- verify_associativity(module) do
+      verify_idempotence(module)
     end
   end
 
@@ -190,24 +191,24 @@ defmodule Laniakea.CRDT do
     end
   end
 
-  defp create_test_instance(Laniakea.CRDT.GCounter, node_id) do
-    Laniakea.CRDT.GCounter.new()
-    |> Laniakea.CRDT.GCounter.increment(node_id)
+  defp create_test_instance(GCounter, node_id) do
+    GCounter.new()
+    |> GCounter.increment(node_id)
   end
 
-  defp create_test_instance(Laniakea.CRDT.PNCounter, node_id) do
-    Laniakea.CRDT.PNCounter.new()
-    |> Laniakea.CRDT.PNCounter.increment(node_id)
+  defp create_test_instance(PNCounter, node_id) do
+    PNCounter.new()
+    |> PNCounter.increment(node_id)
   end
 
-  defp create_test_instance(Laniakea.CRDT.ORSet, node_id) do
-    Laniakea.CRDT.ORSet.new()
-    |> Laniakea.CRDT.ORSet.add("test_element", node_id)
+  defp create_test_instance(ORSet, node_id) do
+    ORSet.new()
+    |> ORSet.add("test_element", node_id)
   end
 
-  defp create_test_instance(Laniakea.CRDT.LWWRegister, node_id) do
-    Laniakea.CRDT.LWWRegister.new()
-    |> Laniakea.CRDT.LWWRegister.set("test_value", node_id)
+  defp create_test_instance(LWWRegister, node_id) do
+    LWWRegister.new()
+    |> LWWRegister.set("test_value", node_id)
   end
 
   defp create_test_instance(module, _node_id) do

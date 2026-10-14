@@ -34,10 +34,10 @@ defmodule Laniakea.CRDT.LWWRegisterTest do
     test "sets value with explicit timestamp" do
       reg =
         LWWRegister.new()
-        |> LWWRegister.set_with_timestamp("value", "node1", 12345)
+        |> LWWRegister.set_with_timestamp("value", "node1", 12_345)
 
       assert LWWRegister.value(reg) == "value"
-      assert LWWRegister.timestamp(reg) == 12345
+      assert LWWRegister.timestamp(reg) == 12_345
     end
   end
 
@@ -91,7 +91,7 @@ defmodule Laniakea.CRDT.LWWRegisterTest do
     test "round-trips correctly" do
       reg =
         LWWRegister.new()
-        |> LWWRegister.set_with_timestamp("test_value", "node1", 12345)
+        |> LWWRegister.set_with_timestamp("test_value", "node1", 12_345)
 
       wire = LWWRegister.to_wire(reg)
       restored = LWWRegister.from_wire(wire)
