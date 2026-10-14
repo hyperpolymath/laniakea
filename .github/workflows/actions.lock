@@ -21,6 +21,7 @@ workflows:
     '.github/workflows/codeql.yml':
         - 'actions/checkout@v7.0.1'
         - 'github/codeql-action@24c54180a607b1449ed407dd24f251e4e9147c8d'
+    '.github/workflows/diag-lock.yml': []
     '.github/workflows/dogfood-gate.yml':
         - 'actions/checkout@v7.0.1'
         - 'hyperpolymath/deed-ecosystem@main'
