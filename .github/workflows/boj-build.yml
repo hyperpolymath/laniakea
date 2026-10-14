@@ -13,16 +13,31 @@ jobs:
         uses: actions/checkout@v7.0.1
       - name: Trigger BoJ Server (Casket/ssg-mcp)
         env:
+          BOJ_SERVER_URL: ${{ vars.BOJ_SERVER_URL }}
           REPO: ${{ github.repository }}
           BRANCH: ${{ github.ref_name }}
         run: |
           # Send a secure trigger to boj-server to build this repository.
-          # Context values arrive via env (never interpolated into the shell
-          # script) and the JSON body is built with jq --arg, so a crafted
-          # branch name cannot break out of either the shell or the JSON.
+          #
+          # The endpoint is deployment configuration, not source: set the
+          # repository (or organisation) variable BOJ_SERVER_URL to the
+          # boj-server base URL, e.g. https://boj.example.org:7700. There
+          # is deliberately no clear-text URL literal here — the previous
+          # hard-coded plain-HTTP LAN address was both unreachable from
+          # GitHub-hosted runners and a clear-text-protocol finding. When
+          # the variable is unset the trigger is skipped; the step stays
+          # best-effort (continue-on-error) when it is set.
+          #
+          # Context values arrive via env (never interpolated into the
+          # shell script) and the JSON body is built with jq --arg, so a
+          # crafted branch name cannot break out of the shell or the JSON.
+          if [ -z "${BOJ_SERVER_URL}" ]; then
+            echo "::notice::BOJ_SERVER_URL is not set; skipping BoJ build trigger."
+            exit 0
+          fi
           PAYLOAD="$(jq -cn --arg repo "${REPO}" --arg branch "${BRANCH}" \
             '{repo: $repo, branch: $branch, engine: "casket"}')"
-          curl -X POST "http://boj-server.local:7700/cartridges/ssg-mcp/invoke" -H "Content-Type: application/json" -d "${PAYLOAD}"
+          curl -X POST "${BOJ_SERVER_URL}/cartridges/ssg-mcp/invoke" -H "Content-Type: application/json" -d "${PAYLOAD}"
         continue-on-error: true
 permissions:
   contents: read

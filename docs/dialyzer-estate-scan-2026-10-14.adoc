@@ -1,0 +1,208 @@
+= Dialyzer / toolchain estate scan — first-run findings, pin drift, workflow injection (2026-10-14)
+:toc:
+
+== Why
+
+PR hyperpolymath/laniakea#103 made Credo `--strict` green for the first
+time. The next gate in the chain, Type Checking (`mix dialyzer`, job
+`116023124400` on run `38613549145`), then failed for the first time too.
+Investigation showed the failure was not a regression from #103 but the
+same pre-existing class as the format and Credo findings before it:
+*every step of the quality chain had only ever run until the first
+failing step, so Dialyzer had never run to completion in CI at all.*
+Its first complete run reported findings on code that predates the PR
+series. This document records the root causes, the foundational fix
+landed for laniakea (PR #104), and the measured estate exposure.
+
+== The findings on PR #103, mapped to root causes
+
+[cols="1,1,2"]
+|===
+| Finding | Where | Root cause
+
+| `contract_supertype` (x3)
+| `GCounter.new/0` (g_counter.ex:72), `LWWRegister.new/0`
+  (lww_register.ex:60), `ORSet.new/0` (or_set.ex:65)
+| PR #103 changed these specs to `@spec new() :: t()` to satisfy Credo's
+  SpecWithStruct, trading one gate for another. Dialyzer's success
+  typing for `def new, do: %Struct{}` is the empty struct itself, so
+  `:: t()` is a strict supertype under the project's `:underspecs`
+  flag (server/mix.exs). Both gates were right; the spec was wrong.
+
+| `:proc_lib.set_label/1 is undefined or private` (`:unknown`)
+| dependency beams (`db_connection`)
+| Locked `db_connection` 2.8.1 (via `ecto_sql`/`postgrex`) calls
+  `:proc_lib.set_label/1` behind a `function_exported?` runtime guard.
+  That function was added in OTP 27; CI pinned OTP 26 / Elixir 1.15.
+  The toolchain pin had drifted behind the locked dependencies, and
+  Dialyzer's `:unknown` flag reports the guarded call statically.
+
+| (latent) stale PLT/beam restoration
+| `.github/workflows/ci.yml` cache keys
+| Deps/`_build`/PLT caches were keyed only on `hashFiles('mix.lock')`.
+  After any toolchain pin bump, CI would silently restore a PLT and
+  beams built under the old OTP/Elixir. (branch-newspaper already
+  includes the versions in its keys; laniakea did not.)
+|===
+
+Two handoff suspects were investigated and are *clean*: the
+`Mix.Tasks.Laniakea` refactors from #103 (`dispatch/2`,
+`verify_module/2`, `typed_checks/1`, table helpers) and
+`crdt_suite_status/0`'s `:ok = Laniakea.CRDT.verify(...)` matches
+produce no Dialyzer warnings (verified by local analysis, below).
+
+== Fix landed (laniakea, PR #104) — at source, no ignore files
+
+* *Specs:* each CRDT constructor is now specified with a named `empty`
+  type that is exactly Dialyzer's success typing
+  (`@type empty :: %GCounter{counts: %{}, version: 0}`, etc.), with
+  `@spec new() :: empty()`. The struct literal lives in the `@type`,
+  not the `@spec` — Credo's SpecWithStruct only inspects `@spec`
+  nodes (verified in credo 1.7.15 source), so both gates pass with no
+  weakening of either. `PNCounter.new/0` got the same treatment for
+  symmetry (it was not flagged; its success typing already flowed from
+  `GCounter.new/0`).
+* *Toolchain:* OTP `26` -> `27`, Elixir `1.15` -> `1.17` in
+  `.github/workflows/ci.yml` and `.gitlab-ci.yml`; `mix.exs` floor
+  raised to `~> 1.17`; README prerequisite updated. No
+  `.dialyzer_ignore.exs` was added.
+* *Caches:* every deps/`_build`/PLT cache key (and restore-keys prefix)
+  in `ci.yml` now includes `ELIXIR_VERSION`/`OTP_VERSION`.
+* *Workflow script injection (code-scanning class):* no `${{ }}`
+  interpolation remains inside any `run:` script in this repo.
+  `boj-build.yml`, `casket-pages.yml`, `dogfood-gate.yml` and
+  `instant-sync.yml` now pass context/step outputs through `env:` and
+  reference shell variables; `boj-build.yml` additionally builds its
+  JSON body with `jq --arg` so a crafted branch name cannot break out
+  of the shell or the JSON. `uses:` refs are unchanged, so
+  `actions.lock` stays in sync (its gate passes).
+* *Clear-text endpoint (SonarCloud S5332, found by PR #104 itself):*
+  touching `boj-build.yml` made its pre-existing hard-coded
+  plain-HTTP LAN endpoint count as "new code" and failed SonarCloud's
+  Security Rating on New Code (required >= A) — the same
+  sleep-until-touched pattern as the Dialyzer findings. The endpoint
+  is deployment configuration, so it now comes from the repo/org
+  variable `BOJ_SERVER_URL` (set it to the HTTPS base URL, e.g.
+  `https://boj.example.org:7700`); when unset the step skips cleanly
+  instead of posting to a hard-coded `http://` address that
+  GitHub-hosted runners cannot reach anyway.
+
+== Local verification
+
+Both toolchains were built from source in the sandbox
+(OTP 26.2.5.21 / Elixir 1.15.8 for the old pins; OTP 27.3.4.19 /
+Elixir 1.17.3 for the new pins; Hex itself is not reachable from the
+sandbox, so dependency-free modules were analysed directly and Credo
+was vendored from git at the locked versions):
+
+[cols="1,1,1"]
+|===
+| Check | OTP 26 / Elixir 1.15 | OTP 27 / Elixir 1.17
+
+| Dialyzer (project flags: error_handling, underspecs, unknown,
+  unmatched_returns) over CRDTs, CRDT facade, Registry, Command Bus,
+  Policy Engine, Mix task
+| clean (before fix: exactly the 3 supertype warnings CI showed)
+| clean
+
+| `mix format --check-formatted`
+| pass
+| pass
+
+| `mix credo --strict` (28 files)
+| pass
+| pass
+
+| CRDT unit + e2e suites
+| 64 tests, 30 doctests, 0 failures
+| 64 tests, 30 doctests, 0 failures
+|===
+
+PR #104's own CI then confirmed the full project (Phoenix deps
+included): Quality Checks, Type Checking, Server Tests
+(`mix compile --warnings-as-errors` + tests), CRDT Law Verification
+and Build all pass on OTP 27 / Elixir 1.17.
+
+== Code-scanning alerts: what could and could not be read
+
+The session token (a GitHub App installation token) is denied by the
+code-scanning REST API (`403 Resource not accessible by integration`
+— the installation lacks the `security_events` permission), so the
+alert list at github.com/hyperpolymath/laniakea/security/code-scanning
+cannot be enumerated from here. The fixes above therefore target the
+rule classes that this repo's own scanning setup (CodeQL `actions`
+language pack, Scorecard SARIF, SonarCloud) can actually raise
+against the code in this repo, each verified at source:
+
+* CodeQL `actions/code-injection` / Scorecard `DangerousWorkflow` /
+  zizmor `template-injection` — class I below; fixed in all four
+  affected workflows.
+* SonarCloud S5332 clear-text protocols — class J below; fixed via
+  `BOJ_SERVER_URL` externalisation.
+* Unpinned-action alerts (CodeQL `actions/unpinned-tag`, Scorecard
+  `PinnedDependencies`) are mitigated estate-wide by design through
+  `actions.lock` (the lockfile records the resolved commit SHA for
+  every version-pinned `uses:` ref, and the Lock Sync Gate fails any
+  drift). Rewriting refs to SHAs in the YAML would break that gate;
+  if such alerts are open they should be dismissed as
+  mitigated-by-lockfile rather than "fixed" per repo.
+
+== Estate exposure (measured 2026-10-14)
+
+`scripts/scan-estate-beam.sh` (read-only; shallow clone per repo)
+implements classes F–J from the table below. Measured:
+
+* 8 repos under `hyperpolymath` have Dialyzer configured in a
+  `mix.exs` (code search `dialyzer filename:mix.exs`): ambientops,
+  boj-server-cartridges, claude-integrations, git-scripts, laniakea,
+  patallm-gallery, phronesis, snifs. Only 3 files estate-wide enable
+  `:underspecs` (laniakea's `server/mix.exs`, ambientops'
+  `hybrid-automation-router/mix.exs`, and a vendored dep in
+  git-scripts) — every other Elixir repo will meet class F the day it
+  turns `:underspecs` on and gives a constructor a `:: t()` spec.
+* Class G measured directly on laniakea (OTP 26 pin + `db_connection`
+  in lock). branch-newspaper pins the same OTP 26.2 / Elixir 1.15.7
+  pair (no `db_connection` in its lock at scan time, so not yet
+  exposed — it will be on its next `ecto` bump if the pin stays).
+* Class I is the widest: the scanner found 17 hits in laniakea before
+  the fix, 16 in branch-newspaper, 37 in snifs, 23 in
+  voyage-enterprise-decision-system, 16 in patallm-gallery, 14 in
+  boj-server-cartridges — mostly the shared estate workflow templates
+  (`casket-pages.yml`, `dogfood-gate.yml`, `boj-build.yml`,
+  `instant-sync.yml`). The durable fix therefore belongs in the
+  templates in hyperpolymath/standards as well as per-repo; this PR
+  fixes laniakea's copies and ships the scanner to find the rest.
+* Class J: the `boj-build.yml` template with the hard-coded plain-HTTP
+  endpoint appears in ~183 workflow files estate-wide (code search).
+  Each will fail its repo's Sonar new-code gate the first time any PR
+  touches that file, until the template externalises the endpoint.
+* Class H: voyage-enterprise-decision-system and branch-newspaper
+  each have one toolchain-blind cache key at scan time (prod cache);
+  laniakea had three before this PR.
+
+== Propagation
+
+Per-repo application is deliberately mechanical and reviewable, in
+line with `docs/cicd-estate-scan-2026-10-14.adoc`:
+
+[source,sh]
+----
+scripts/scan-estate-beam.sh > estate-beam-scan.csv   # read-only report
+scripts/scan-estate-beam.sh OWNER/REPO ...           # or named repos
+----
+
+Per finding: F — name the constructor's empty type as in the four
+CRDT modules here; G — align OTP/Elixir pins with the lockfile
+(OTP 27 / Elixir 1.17) rather than adding ignore entries; H — put the
+toolchain versions in the cache keys in the same PR as any pin bump;
+I — move the value to `env:` (and `jq --arg` for JSON bodies);
+J — externalise the endpoint to a repo/org variable over HTTPS.
+
+NOTE: This change set fixes laniakea and ships the propagation
+tooling. It does not push to the other repositories from this PR;
+each gets the same fix as its own reviewed PR, and classes I/J
+additionally want the shared templates in hyperpolymath/standards
+updated so new repos stop inheriting them. Bulk-pushing identical
+commits to hundreds of repositories without per-repo review is
+exactly the failure mode that created the actions-lock class-B
+desync.
