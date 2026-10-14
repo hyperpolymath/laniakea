@@ -52,11 +52,23 @@ https://semver.org/spec/v2.0.0.html[Semantic Versioning].
 
 ==== Fixed
 
-* Nothing yet
+* Type Checking (Dialyzer) green for the first time: CRDT constructor
+  specs now use a named `empty` type instead of `:: t()` (Dialyzer
+  `contract_supertype` under `:underspecs`, reconciled with Credo's
+  SpecWithStruct); toolchain pins aligned with the locked dependencies
+  (OTP 27 / Elixir 1.17) so OTP 27-only APIs used by locked deps
+  (`:proc_lib.set_label/1` in db_connection) no longer report as
+  unknown. CI cache keys now include the toolchain versions.
+  See `docs/dialyzer-estate-scan-2026-10-14.adoc`.
 
 ==== Security
 
-* Nothing yet
+* Workflows: no `${{ }}` interpolation remains inside any `run:`
+  script (script-injection class); context values pass via `env:` and
+  the BoJ trigger body is built with `jq --arg`.
+* BoJ build trigger endpoint externalised to the `BOJ_SERVER_URL`
+  repo/org variable (HTTPS) instead of a hard-coded clear-text
+  plain-HTTP address (SonarCloud S5332).
 
 === https://github.com/laniakea/laniakea/releases/tag/v0.1.0[0.1.0] - TBD
 
