@@ -48,6 +48,10 @@ defmodule Laniakea.CRDT.LWWRegister do
           version: non_neg_integer()
         }
 
+  # The exact type of a freshly constructed register (see GCounter.empty/0
+  # for why `new/0` is not specified as `:: t()`).
+  @type empty :: %LWWRegister{value: nil, timestamp: 0, node_id: nil, version: 0}
+
   defstruct value: nil, timestamp: 0, node_id: nil, version: 0
 
   # ============================================================================
@@ -57,7 +61,7 @@ defmodule Laniakea.CRDT.LWWRegister do
   @doc """
   Creates a new, empty LWW-Register.
   """
-  @spec new() :: t()
+  @spec new() :: empty()
   def new, do: %LWWRegister{}
 
   @doc """

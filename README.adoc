@@ -8,7 +8,7 @@ https://www.bestpractices.dev/en/projects/new?repo_url=https://github.com/hyperp
 Best Practices]]
 https://github.com/hyperpolymath/palimpsest-license[image:https://img.shields.io/badge/License-MPL--2.0-blue.svg[License:
 PMPL-1.0]]
-image::https://img.shields.io/badge/elixir-%3E%3D%201.15-purple[Elixir]
+image::https://img.shields.io/badge/elixir-%3E%3D%201.17-purple[Elixir]
 
 [[toc]]
 
@@ -300,7 +300,7 @@ actual OTP in browser.
 
 === Prerequisites
 
-* Elixir >= 1.15
+* Elixir >= 1.17 (with Erlang/OTP 27)
 * Node.js >= 18
 * PostgreSQL (optional, for persistence)
 

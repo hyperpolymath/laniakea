@@ -53,6 +53,10 @@ defmodule Laniakea.CRDT.ORSet do
           version: non_neg_integer()
         }
 
+  # The exact type of a freshly constructed set (see GCounter.empty/0 for
+  # why `new/0` is not specified as `:: t()`).
+  @type empty :: %ORSet{elements: %{}, tombstones: %{}, version: 0}
+
   defstruct elements: %{}, tombstones: %{}, version: 0
 
   # ============================================================================
@@ -62,7 +66,7 @@ defmodule Laniakea.CRDT.ORSet do
   @doc """
   Creates a new, empty OR-Set.
   """
-  @spec new() :: t()
+  @spec new() :: empty()
   def new, do: %ORSet{}
 
   # ============================================================================

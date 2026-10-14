@@ -12,9 +12,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7.0.1
       - name: Trigger BoJ Server (Casket/ssg-mcp)
+        env:
+          REPO: ${{ github.repository }}
+          BRANCH: ${{ github.ref_name }}
         run: |
-          # Send a secure trigger to boj-server to build this repository
-          curl -X POST "http://boj-server.local:7700/cartridges/ssg-mcp/invoke"             -H "Content-Type: application/json"             -d "{\"repo\": \"${{ github.repository }}\", \"branch\": \"${{ github.ref_name }}\", \"engine\": \"casket\\"}"}
+          # Send a secure trigger to boj-server to build this repository.
+          # Context values arrive via env (never interpolated into the shell
+          # script) and the JSON body is built with jq --arg, so a crafted
+          # branch name cannot break out of either the shell or the JSON.
+          PAYLOAD="$(jq -cn --arg repo "${REPO}" --arg branch "${BRANCH}" \
+            '{repo: $repo, branch: $branch, engine: "casket"}')"
+          curl -X POST "http://boj-server.local:7700/cartridges/ssg-mcp/invoke" -H "Content-Type: application/json" -d "${PAYLOAD}"
         continue-on-error: true
 permissions:
   contents: read

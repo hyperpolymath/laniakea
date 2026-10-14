@@ -10,8 +10,8 @@ stages:
 
 variables:
   MIX_ENV: test
-  ELIXIR_VERSION: "1.15"
-  OTP_VERSION: "26"
+  ELIXIR_VERSION: "1.17"
+  OTP_VERSION: "27"
   DENO_VERSION: "1.38"
 
 # Cache configuration

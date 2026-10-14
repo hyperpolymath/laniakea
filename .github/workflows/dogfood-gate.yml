@@ -45,8 +45,10 @@ jobs:
           strict: 'false'
 
       - name: Write summary
+        env:
+          A2ML_COUNT: ${{ steps.detect.outputs.count }}
         run: |
-          A2ML_COUNT="${{ steps.detect.outputs.count }}"
+          A2ML_COUNT="${A2ML_COUNT}"
           if [ "$A2ML_COUNT" -eq 0 ]; then
             cat <<'EOF' >> "$GITHUB_STEP_SUMMARY"
           ## A2ML Validation
@@ -93,9 +95,12 @@ jobs:
           strict: 'false'
 
       - name: Write summary
+        env:
+          K9_COUNT: ${{ steps.detect.outputs.k9_count }}
+          CFG_COUNT: ${{ steps.detect.outputs.config_count }}
         run: |
-          K9_COUNT="${{ steps.detect.outputs.k9_count }}"
-          CFG_COUNT="${{ steps.detect.outputs.config_count }}"
+          K9_COUNT="${K9_COUNT}"
+          CFG_COUNT="${CFG_COUNT}"
           if [ "$K9_COUNT" -eq 0 ]; then
             cat <<'EOF' >> "$GITHUB_STEP_SUMMARY"
           ## K9 Contract Validation
@@ -156,9 +161,12 @@ jobs:
           done < /tmp/empty-lint-results.txt
 
       - name: Write summary
+        env:
+          LINT_READY: ${{ steps.lint.outputs.ready }}
+          LINT_FINDINGS: ${{ steps.lint.outputs.findings }}
         run: |
-          if [ "${{ steps.lint.outputs.ready }}" = "true" ]; then
-            FINDINGS="${{ steps.lint.outputs.findings }}"
+          if [ "${LINT_READY}" = "true" ]; then
+            FINDINGS="${LINT_FINDINGS}"
             if [ "$FINDINGS" -gt 0 ] 2>/dev/null; then
               echo "## Empty-Linter Results" >> "$GITHUB_STEP_SUMMARY"
               echo "" >> "$GITHUB_STEP_SUMMARY"
@@ -223,14 +231,18 @@ jobs:
           fi
 
       - name: Write summary
+        env:
+          HAS_MANIFEST: ${{ steps.groove.outputs.has_manifest }}
+          HAS_GROOVE_CODE: ${{ steps.groove.outputs.has_groove_code }}
+          HAS_SERVER: ${{ steps.groove.outputs.has_server }}
         run: |
           echo "## Groove Protocol Check" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "| Check | Status |" >> "$GITHUB_STEP_SUMMARY"
           echo "|-------|--------|" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Static manifest (.well-known/groove/manifest.json) | ${{ steps.groove.outputs.has_manifest }} |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Groove endpoint in code | ${{ steps.groove.outputs.has_groove_code }} |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Has HTTP server code | ${{ steps.groove.outputs.has_server }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Static manifest (.well-known/groove/manifest.json) | ${HAS_MANIFEST} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Groove endpoint in code | ${HAS_GROOVE_CODE} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Has HTTP server code | ${HAS_SERVER} |" >> "$GITHUB_STEP_SUMMARY"
 
   # ---------------------------------------------------------------------------
   # Job 5: Dogfooding summary
